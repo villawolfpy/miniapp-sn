@@ -1,0 +1,316 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(1 0 0); /* Pure white */
+  --foreground: oklch(0.35 0 0); /* Dark grey for text */
+  --card: oklch(0.98 0.02 142); /* Light green tint */
+  --card-foreground: oklch(0.35 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.35 0 0);
+  --primary: oklch(0.45 0.15 142); /* Green-700 equivalent */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.75 0.18 120); /* Vibrant green accent */
+  --secondary-foreground: oklch(0.35 0 0);
+  --muted: oklch(0.98 0.02 142);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.75 0.18 120); /* Vibrant green for highlights */
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.01 142);
+  --input: oklch(0.98 0.02 142);
+  --ring: oklch(0.45 0.15 142 / 0.5);
+  --chart-1: oklch(0.45 0.15 142);
+  --chart-2: oklch(0.75 0.18 120);
+  --chart-3: oklch(0.98 0.02 142);
+  --chart-4: oklch(0.35 0 0);
+  --chart-5: oklch(0.92 0.01 142);
+  --radius: 0.5rem;
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.35 0 0);
+  --sidebar-primary: oklch(0.98 0.02 142);
+  --sidebar-primary-foreground: oklch(0.35 0 0);
+  --sidebar-accent: oklch(0.75 0.18 120);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.92 0.01 142);
+  --sidebar-ring: oklch(0.45 0.15 142 / 0.5);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.18 0.02 142);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.75 0.18 120);
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.25 0.05 142);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.25 0.05 142);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.75 0.18 120);
+  --accent-foreground: oklch(0.145 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.25 0.05 142);
+  --input: oklch(0.25 0.05 142);
+  --ring: oklch(0.75 0.18 120 / 0.5);
+  --chart-1: oklch(0.75 0.18 120);
+  --chart-2: oklch(0.45 0.15 142);
+  --chart-3: oklch(0.25 0.05 142);
+  --chart-4: oklch(0.985 0 0);
+  --chart-5: oklch(0.708 0 0);
+  --sidebar: oklch(0.18 0.02 142);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.75 0.18 120);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.25 0.05 142);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.25 0.05 142);
+  --sidebar-ring: oklch(0.75 0.18 120 / 0.5);
+}
+
+/* Added complete RainbowKit CSS styles for proper modal display */
+[data-rk] {
+  --rk-colors-accentColor: oklch(0.45 0.15 142);
+  --rk-colors-accentColorForeground: oklch(1 0 0);
+  --rk-colors-actionButtonBorder: oklch(0.92 0.01 142);
+  --rk-colors-actionButtonBorderMobile: oklch(0.92 0.01 142);
+  --rk-colors-actionButtonSecondaryBackground: oklch(0.98 0.02 142);
+  --rk-colors-closeButton: oklch(0.55 0 0);
+  --rk-colors-closeButtonBackground: oklch(0.98 0.02 142);
+  --rk-colors-connectButtonBackground: oklch(0.45 0.15 142);
+  --rk-colors-connectButtonBackgroundError: oklch(0.577 0.245 27.325);
+  --rk-colors-connectButtonInnerBackground: oklch(0.75 0.18 120);
+  --rk-colors-connectButtonText: oklch(1 0 0);
+  --rk-colors-connectButtonTextError: oklch(1 0 0);
+  --rk-colors-connectionIndicator: oklch(0.75 0.18 120);
+  --rk-colors-downloadBottomCardBackground: oklch(0.98 0.02 142);
+  --rk-colors-downloadTopCardBackground: oklch(1 0 0);
+  --rk-colors-error: oklch(0.577 0.245 27.325);
+  --rk-colors-generalBorder: oklch(0.92 0.01 142);
+  --rk-colors-generalBorderDim: oklch(0.92 0.01 142);
+  --rk-colors-menuItemBackground: oklch(0.98 0.02 142);
+  --rk-colors-modalBackdrop: oklch(0 0 0 / 0.3);
+  --rk-colors-modalBackground: oklch(1 0 0);
+  --rk-colors-modalBorder: oklch(0.92 0.01 142);
+  --rk-colors-modalText: oklch(0.35 0 0);
+  --rk-colors-modalTextDim: oklch(0.55 0 0);
+  --rk-colors-modalTextSecondary: oklch(0.55 0 0);
+  --rk-colors-profileAction: oklch(0.98 0.02 142);
+  --rk-colors-profileActionHover: oklch(0.92 0.01 142);
+  --rk-colors-profileForeground: oklch(1 0 0);
+  --rk-colors-selectedOptionBorder: oklch(0.45 0.15 142);
+  --rk-colors-standby: oklch(0.75 0.18 120);
+}
+
+.dark [data-rk] {
+  --rk-colors-accentColor: oklch(0.75 0.18 120);
+  --rk-colors-accentColorForeground: oklch(0.145 0 0);
+  --rk-colors-actionButtonBorder: oklch(0.25 0.05 142);
+  --rk-colors-actionButtonBorderMobile: oklch(0.25 0.05 142);
+  --rk-colors-actionButtonSecondaryBackground: oklch(0.18 0.02 142);
+  --rk-colors-closeButton: oklch(0.708 0 0);
+  --rk-colors-closeButtonBackground: oklch(0.18 0.02 142);
+  --rk-colors-connectButtonBackground: oklch(0.75 0.18 120);
+  --rk-colors-connectButtonBackgroundError: oklch(0.396 0.141 25.723);
+  --rk-colors-connectButtonInnerBackground: oklch(0.45 0.15 142);
+  --rk-colors-connectButtonText: oklch(0.145 0 0);
+  --rk-colors-connectButtonTextError: oklch(0.985 0 0);
+  --rk-colors-connectionIndicator: oklch(0.75 0.18 120);
+  --rk-colors-downloadBottomCardBackground: oklch(0.18 0.02 142);
+  --rk-colors-downloadTopCardBackground: oklch(0.145 0 0);
+  --rk-colors-error: oklch(0.396 0.141 25.723);
+  --rk-colors-generalBorder: oklch(0.25 0.05 142);
+  --rk-colors-generalBorderDim: oklch(0.25 0.05 142);
+  --rk-colors-menuItemBackground: oklch(0.18 0.02 142);
+  --rk-colors-modalBackdrop: oklch(0 0 0 / 0.5);
+  --rk-colors-modalBackground: oklch(0.145 0 0);
+  --rk-colors-modalBorder: oklch(0.25 0.05 142);
+  --rk-colors-modalText: oklch(0.985 0 0);
+  --rk-colors-modalTextDim: oklch(0.708 0 0);
+  --rk-colors-modalTextSecondary: oklch(0.708 0 0);
+  --rk-colors-profileAction: oklch(0.18 0.02 142);
+  --rk-colors-profileActionHover: oklch(0.25 0.05 142);
+  --rk-colors-profileForeground: oklch(0.145 0 0);
+  --rk-colors-selectedOptionBorder: oklch(0.75 0.18 120);
+  --rk-colors-standby: oklch(0.75 0.18 120);
+}
+
+/* RainbowKit Modal Styles */
+[data-rk] .iekbcc0 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--rk-colors-modalBackdrop);
+}
+
+[data-rk] .ju367v0 {
+  position: relative;
+  background: var(--rk-colors-modalBackground);
+  border: 1px solid var(--rk-colors-modalBorder);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 408px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+[data-rk] .ju367v1 {
+  padding: 24px;
+}
+
+[data-rk] .ju367v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+[data-rk] .ju367v3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[data-rk] .ju367v4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--rk-colors-modalText);
+  margin: 0;
+}
+
+[data-rk] .ju367v5 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+[data-rk] .ju367v6 {
+  font-size: 14px;
+  color: var(--rk-colors-modalTextSecondary);
+  margin: 0 0 12px 0;
+}
+
+[data-rk] .ju367v7 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-rk] .ju367v8 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid var(--rk-colors-actionButtonBorder);
+  border-radius: 12px;
+  background: var(--rk-colors-actionButtonSecondaryBackground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-rk] .ju367v8:hover {
+  background: var(--rk-colors-menuItemBackground);
+}
+
+[data-rk] .ju367v9 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+[data-rk] .ju367va {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-rk] .ju367vb {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--rk-colors-modalText);
+}
+
+[data-rk] .ju367vc {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--rk-colors-closeButtonBackground);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rk-colors-closeButton);
+  transition: all 0.2s ease;
+}
+
+[data-rk] .ju367vc:hover {
+  background: var(--rk-colors-profileActionHover);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
