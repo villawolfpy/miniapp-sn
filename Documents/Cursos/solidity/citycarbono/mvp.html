@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbono Experience MVP</title>
+    <style>
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --accent: #ff6b6b;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(26, 26, 46, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #ccc;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-success {
+            background: linear-gradient(to right, var(--success), #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(to right, var(--warning), #fd7e14);
+        }
+
+        .btn-danger {
+            background: linear-gradient(to right, var(--danger), #e83e8c);
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .status.success {
+            background: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid var(--success);
+        }
+
+        .status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--danger);
+        }
+
+        .status.warning {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning);
+        }
+
+        .account-info {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 50px;
+            margin: 10px 0;
+        }
+
+        .network-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .network-connected {
+            background-color: var(--success);
+        }
+
+        .network-disconnected {
+            background-color: var(--danger);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .balance {
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+
+        .price-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            .wallet-section {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Carbono Experience MVP</h1>
+            <p class="subtitle">Compra CBO y minte NFTs de Experiencia en la blockchain</p>
+        </header>
+
+        <div class="card">
+            <div class="wallet-section">
+                <div>
+                    <h2>Conexión de Wallet</h2>
+                    <p>Conecta tu wallet para comenzar</p>
+                </div>
+                <button id="connectWallet" class="btn">Conectar Wallet</button>
+            </div>
+
+            <div id="accountInfo" class="account-info hidden">
+                <span id="networkIndicator" class="network-indicator network-disconnected"></span>
+                <span id="walletAddress">Dirección no conectada</span>
+            </div>
+        </div>
+
+        <div id="cboSection" class="card hidden">
+            <h2>Comprar Carbono (CBO)</h2>
+            <p>Compra tokens CBO con ETH para poder mintear NFTs</p>
+            <div class="price-info">
+                <strong>Precio:</strong> 0.001 ETH por 1 CBO
+            </div>
+            <div class="balance" id="cboBalance">Balance CBO: Cargando...</div>
+            <input type="number" id="ethAmount" placeholder="Cantidad de ETH" step="0.001" min="0.001" style="padding: 10px; width: 200px; border-radius: 50px; border: none; margin-right: 10px;">
+            <button id="buyCBO" class="btn btn-success">Comprar CBO</button>
+        </div>
+
+        <div id="mintSection" class="card hidden">
+            <h2>Mintear NFTs de Experiencia</h2>
+            <p>Mint NFTs únicos pagando con CBO</p>
+            <div class="price-info">
+                <strong>Precio por NFT:</strong> <span id="expPrice">Cargando...</span> CBO
+            </div>
+            <div class="balance" id="expBalance">Tus NFTs: Cargando...</div>
+            <input type="number" id="mintQty" placeholder="Cantidad" min="1" value="1" style="padding: 10px; width: 150px; border-radius: 50px; border: none; margin-right: 10px;">
+            <button id="approveBtn" class="btn btn-warning">Aprobar CBO</button>
+            <button id="mintBtn" class="btn btn-success" disabled>Mint NFT</button>
+        </div>
+
+        <div id="status" class="status hidden">
+            <strong>Estado:</strong> <span id="statusMessage">Esperando acción...</span>
+        </div>
+
+        <footer>
+            <p>MVP Carbono Experience | Red Sepolia Testnet</p>
+            <p>Asegúrate de tener MetaMask instalado y conectado a Sepolia</p>
+        </footer>
+    </div>
+
+    <script>
+        // Elementos del DOM
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const buyCBOBtn = document.getElementById('buyCBO');
+        const approveBtn = document.getElementById('approveBtn');
+        const mintBtn = document.getElementById('mintBtn');
+        const accountInfo = document.getElementById('accountInfo');
+        const cboSection = document.getElementById('cboSection');
+        const mintSection = document.getElementById('mintSection');
+        const walletAddress = document.getElementById('walletAddress');
+        const networkIndicator = document.getElementById('networkIndicator');
+        const status = document.getElementById('status');
+        const statusMessage = document.getElementById('statusMessage');
+        const cboBalance = document.getElementById('cboBalance');
+        const expBalance = document.getElementById('expBalance');
+        const expPrice = document.getElementById('expPrice');
+
+        // Direcciones de contratos
+        const carbonoAddress = "0x00d7de742a7951f0cb2ff9dd26722cf4c51162d3";
+        const experienciaAddress = "0xaf9cc0235eef4976ab42f5f353f17cb4bcde7f04";
+
+        // ABIs simplificadas
+        const carbonoABI = [
+            {
+                "inputs": [],
+                "name": "buyCarbono",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address", "name": "spender", "type": "address"}, {"internalType": "uint256", "name": "value", "type": "uint256"}],
+                "name": "approve",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        const experienciaABI = [
+            {
+                "inputs": [{"internalType": "uint256", "name": "qty", "type": "uint256"}],
+                "name": "mint",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "priceInCBO",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // Variables globales
+        let web3;
+        let account;
+        let carbonoContract;
+        let experienciaContract;
+
+        // Inicialización
+        window.addEventListener('load', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                console.log('MetaMask está instalado!');
+
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await connectWallet();
+                    }
+                } catch (error) {
+                    console.error("Error al reconectar la wallet:", error);
+                }
+
+                ethereum.on('accountsChanged', handleAccountsChanged);
+                ethereum.on('chainChanged', handleChainChanged);
+            } else {
+                showStatus('MetaMask no está instalado. Por favor, instálalo para usar esta DApp.', 'error');
+                connectWalletBtn.disabled = true;
+                connectWalletBtn.innerText = 'MetaMask no instalado';
+            }
+        });
+
+        // Conectar wallet
+        connectWalletBtn.addEventListener('click', connectWallet);
+
+        async function connectWallet() {
+            try {
+                showStatus('Conectando con MetaMask...', 'warning');
+
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+
+                web3 = new Web3(window.ethereum);
+
+                walletAddress.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+                accountInfo.classList.remove('hidden');
+                cboSection.classList.remove('hidden');
+                mintSection.classList.remove('hidden');
+                connectWalletBtn.innerText = 'Wallet Conectada';
+                connectWalletBtn.classList.add('btn-success');
+
+                await checkNetwork();
+                initContracts();
+                await updateBalances();
+
+                showStatus('Wallet conectada correctamente.', 'success');
+            } catch (error) {
+                console.error("Error al conectar la wallet:", error);
+                showStatus('Error al conectar la wallet: ' + error.message, 'error');
+            }
+        }
+
+        function initContracts() {
+            carbonoContract = new web3.eth.Contract(carbonoABI, carbonoAddress);
+            experienciaContract = new web3.eth.Contract(experienciaABI, experienciaAddress);
+        }
+
+        async function updateBalances() {
+            try {
+                const cboBal = await carbonoContract.methods.balanceOf(account).call();
+                const expBal = await experienciaContract.methods.balanceOf(account).call();
+                const price = await experienciaContract.methods.priceInCBO().call();
+
+                cboBalance.textContent = `Balance CBO: ${web3.utils.fromWei(cboBal, 'ether')}`;
+                expBalance.textContent = `Tus NFTs: ${expBal}`;
+                expPrice.textContent = web3.utils.fromWei(price, 'ether');
+            } catch (error) {
+                console.error("Error actualizando balances:", error);
+            }
+        }
+
+        function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                showStatus('Por favor, conecta tu wallet de MetaMask.', 'error');
+                resetUI();
+            } else if (accounts[0] !== account) {
+                account = accounts[0];
+                walletAddress.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+                updateBalances();
+                showStatus('Cuenta cambiada correctamente.', 'success');
+            }
+        }
+
+        function handleChainChanged(chainId) {
+            window.location.reload();
+        }
+
+        async function checkNetwork() {
+            const chainId = await ethereum.request({ method: 'eth_chainId' });
+            const correctChainId = '0xaa36a7'; // Sepolia
+
+            if (chainId === correctChainId) {
+                networkIndicator.classList.add('network-connected');
+                networkIndicator.classList.remove('network-disconnected');
+                return true;
+            } else {
+                networkIndicator.classList.remove('network-connected');
+                networkIndicator.classList.add('network-disconnected');
+                showStatus('Por favor, cambia a la red Sepolia en MetaMask.', 'error');
+                return false;
+            }
+        }
+
+        // Comprar CBO
+        buyCBOBtn.addEventListener('click', buyCBO);
+
+        async function buyCBO() {
+            try {
+                const ethAmount = document.getElementById('ethAmount').value;
+                if (!ethAmount || ethAmount <= 0) {
+                    showStatus('Por favor, ingresa una cantidad válida de ETH.', 'error');
+                    return;
+                }
+
+                const isCorrectNetwork = await checkNetwork();
+                if (!isCorrectNetwork) return;
+
+                showStatus('Comprando CBO...', 'warning');
+
+                const weiAmount = web3.utils.toWei(ethAmount, 'ether');
+
+                await carbonoContract.methods.buyCarbono().send({
+                    from: account,
+                    value: weiAmount
+                });
+
+                showStatus('CBO comprado exitosamente!', 'success');
+                await updateBalances();
+            } catch (error) {
+                console.error("Error comprando CBO:", error);
+                showStatus('Error comprando CBO: ' + error.message, 'error');
+            }
+        }
+
+        // Aprobar CBO
+        approveBtn.addEventListener('click', approveCBO);
+
+        async function approveCBO() {
+            try {
+                const isCorrectNetwork = await checkNetwork();
+                if (!isCorrectNetwork) return;
+
+                showStatus('Aprobando gasto de CBO...', 'warning');
+
+                // Aprobar una cantidad grande
+                const maxAmount = web3.utils.toWei('1000000', 'ether');
+
+                await carbonoContract.methods.approve(experienciaAddress, maxAmount).send({
+                    from: account
+                });
+
+                showStatus('CBO aprobado para gastar. Ahora puedes mintear!', 'success');
+                mintBtn.disabled = false;
+                approveBtn.disabled = true;
+            } catch (error) {
+                console.error("Error aprobando CBO:", error);
+                showStatus('Error aprobando CBO: ' + error.message, 'error');
+            }
+        }
+
+        // Mint NFT
+        mintBtn.addEventListener('click', mintNFT);
+
+        async function mintNFT() {
+            try {
+                const qty = document.getElementById('mintQty').value;
+                if (!qty || qty < 1) {
+                    showStatus('Por favor, ingresa una cantidad válida.', 'error');
+                    return;
+                }
+
+                const isCorrectNetwork = await checkNetwork();
+                if (!isCorrectNetwork) return;
+
+                showStatus('Minteando NFTs...', 'warning');
+
+                await experienciaContract.methods.mint(qty).send({
+                    from: account
+                });
+
+                showStatus(`${qty} NFT(s) minteado(s) exitosamente!`, 'success');
+                await updateBalances();
+            } catch (error) {
+                console.error("Error minteando NFT:", error);
+                showStatus('Error minteando NFT: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            status.classList.remove('hidden');
+            status.classList.remove('success', 'error', 'warning');
+            status.classList.add(type);
+            statusMessage.textContent = message;
+        }
+
+        function resetUI() {
+            accountInfo.classList.add('hidden');
+            cboSection.classList.add('hidden');
+            mintSection.classList.add('hidden');
+            connectWalletBtn.innerText = 'Conectar Wallet';
+            connectWalletBtn.classList.remove('btn-success');
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+</body>
+</html>
