@@ -33,3 +33,5 @@ Una aplicación web simple y funcional para interactuar con los contratos inteli
 ## Despliegue en Vercel
 
 Este proyecto está diseñado para ser desplegado fácilmente en Vercel. Solo conecta tu repositorio de GitHub a Vercel y el archivo `mvp.html` se servirá automáticamente.
+
+**Nota:** El proyecto incluye configuración CSP (`vercel.json`) para permitir el funcionamiento correcto de Web3.js y MetaMask. Si encuentras errores de CSP, asegúrate de que Vercel esté usando la configuración actualizada.
