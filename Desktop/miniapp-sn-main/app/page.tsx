@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ready, signin, composeCast, openUrl } from '@/lib/miniapp';
+import { useEffect, useState } from 'react';
+import { useMiniApp } from '@/lib/miniapp';
+
+export const dynamic = 'force-static';
 
 type PostItem = {
   id: string;
@@ -12,97 +14,74 @@ type PostItem = {
   timeAgo: string;
 };
 
-const territories = ['bitcoin', 'tech', 'nostr', 'meta', 'recent'];
-
 export default function Home() {
-  const [territory, setTerritory] = useState('bitcoin');
-  const [posts, setPosts] = useState<PostItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const host = useMiniApp();
+  const [territory, setTerritory] = useState('recent');
+  const [items, setItems] = useState<PostItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    ready();
-  }, []);
+    host.ready();
+  }, [host]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/rss?territory=${territory}&page=1`);
-        const data = await response.json();
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setPosts(data.items);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
+    setLoading(true);
+    fetch(`/api/rss?territory=${territory}`)
+      .then((r) => r.json())
+      .then((d) => setItems(d.items ?? []))
+      .finally(() => setLoading(false));
   }, [territory]);
 
-  const handleShare = () => {
-    composeCast('Check out SN Reader for Farcaster!');
-  };
-
-  const handleSignin = () => {
-    signin();
-  };
-
-  const handleOpenUrl = (url: string) => {
-    openUrl(url);
-  };
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9f9f9', fontFamily: 'Arial, sans-serif' }}>
-      <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e5e5', padding: '16px', textAlign: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>SN Reader</h1>
-      </header>
+    <main className="mx-auto max-w-sm p-4">
+      <h1 className="text-lg font-semibold mb-2">SN Reader</h1>
+      <select
+        value={territory}
+        onChange={(e) => setTerritory(e.target.value)}
+        className="border p-2 w-full mb-3"
+      >
+        <option value="recent">Recent</option>
+        <option value="bitcoin">Bitcoin</option>
+        <option value="tech">Tech</option>
+        <option value="nostr">Nostr</option>
+        <option value="meta">Meta</option>
+      </select>
 
-      <main style={{ maxWidth: '600px', margin: '0 auto', padding: '16px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>Territorio:</label>
-          <select
-            value={territory}
-            onChange={(e) => setTerritory(e.target.value)}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          >
-            {territories.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <button onClick={handleShare} style={{ marginRight: '8px', padding: '8px 16px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}>
-            Compartir
-          </button>
-          <button onClick={handleSignin} style={{ marginRight: '8px', padding: '8px 16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}>
-            Iniciar sesión
-          </button>
-        </div>
-
-        {loading && <p>Cargando...</p>}
-        {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {posts.map((post) => (
-            <li key={post.id} style={{ marginBottom: '16px', padding: '16px', backgroundColor: 'white', border: '1px solid #e5e5e5', borderRadius: '4px' }}>
-              <h3 style={{ margin: '0 0 8px 0' }}>
-                <a href={`/post/${post.id}`} style={{ textDecoration: 'none', color: '#007bff' }}>{post.title}</a>
-              </h3>
-              <p style={{ margin: '0 0 8px 0', color: '#666' }}>{post.points} puntos por {post.by} hace {post.timeAgo}</p>
-              <button onClick={() => handleOpenUrl(post.url)} style={{ padding: '4px 8px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px' }}>
-                Abrir en Stacker News
-              </button>
+      {loading ? (
+        <p>Cargando…</p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((it) => (
+            <li key={it.id} className="border rounded p-3">
+              <a
+                className="font-medium"
+                href={it.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {it.title}
+              </a>
+              <div className="text-xs opacity-70 mt-1">
+                {it.points} pts • {it.by} • {it.timeAgo}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="border px-2 py-1 rounded"
+                  onClick={() => host.composeCast({ text: it.title, url: it.url })}
+                >
+                  Compartir
+                </button>
+                <button
+                  className="border px-2 py-1 rounded"
+                  onClick={() => host.openUrl(it.url)}
+                >
+                  Abrir
+                </button>
+              </div>
             </li>
           ))}
         </ul>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }

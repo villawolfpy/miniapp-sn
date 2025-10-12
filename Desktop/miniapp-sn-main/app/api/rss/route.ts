@@ -1,66 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 
 export const runtime = 'edge';
 
-const RSS_URLS = {
-  bitcoin: 'https://stacker.news/rss',
-  tech: 'https://stacker.news/rss?tag=tech',
-  nostr: 'https://stacker.news/rss?tag=nostr',
-  meta: 'https://stacker.news/rss?tag=meta',
-  recent: 'https://stacker.news/rss',
-};
+function snFeedUrl(territory: string) {
+  const map: Record<string, string> = {
+    bitcoin: 'https://stacker.news/bitcoin/rss',
+    tech: 'https://stacker.news/tech/rss',
+    nostr: 'https://stacker.news/nostr/rss',
+    meta: 'https://stacker.news/meta/rss',
+    recent: 'https://stacker.news/rss',
+  };
+  return map[territory] ?? map.recent;
+}
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const territory = searchParams.get('territory') || 'bitcoin';
-  const page = parseInt(searchParams.get('page') || '1', 10);
-
+export async function GET(req: Request) {
   try {
-    const rssUrl = RSS_URLS[territory as keyof typeof RSS_URLS] || RSS_URLS.bitcoin;
-    const response = await fetch(rssUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch RSS: ${response.status}`);
-    }
-    const xml = await response.text();
+    const { searchParams } = new URL(req.url);
+    const territory = (searchParams.get('territory') || 'recent').toLowerCase();
+    const url = snFeedUrl(territory);
 
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      attributeNamePrefix: '@_',
+    const res = await fetch(url, {
+      headers: { Accept: 'application/rss+xml' },
+      cache: 'no-store',
     });
-    const result = parser.parse(xml);
+    if (!res.ok)
+      return NextResponse.json(
+        { error: `Feed fetch failed ${res.status}` },
+        { status: 502 }
+      );
 
-    const items = result.rss?.channel?.item || [];
-    const normalizedItems = items.slice(0, 20).map((item: any, index: number) => ({
-      id: item.guid || `${territory}-${index}`,
-      title: item.title || '',
-      url: item.link || '',
-      points: item['stacker:cost'] || 0,
-      by: item['dc:creator'] || 'anonymous',
-      timeAgo: item.pubDate ? new Date(item.pubDate).toLocaleDateString() : 'unknown',
+    const xml = await res.text();
+    const parser = new XMLParser({ ignoreAttributes: false });
+    const parsed = parser.parse(xml);
+
+    const items = (parsed?.rss?.channel?.item || []).map((it: any, i: number) => ({
+      id: String(it?.guid ?? i),
+      title: String(it?.title ?? ''),
+      url: String(it?.link ?? ''),
+      points: Number((it?.description || '').match(/(\d+)\s+points?/)?.[1] ?? 0),
+      by: String(it?.author || it?.['dc:creator'] || 'unknown'),
+      timeAgo: String(it?.pubDate ?? ''),
     }));
 
     return NextResponse.json(
-      { items: normalizedItems },
+      { items },
       {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        },
+        status: 200,
+        headers: { 'Cache-Control': 'public, max-age=60' },
       }
     );
-  } catch (error) {
-    console.error('API error:', error);
+  } catch (e: any) {
     return NextResponse.json(
-      {
-        items: [],
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      {
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      }
+      { error: e?.message ?? 'unknown error' },
+      { status: 500 }
     );
   }
 }

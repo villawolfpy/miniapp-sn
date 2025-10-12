@@ -1,42 +1,27 @@
-export function ready() {
-  if (typeof window !== 'undefined' && window.parent) {
-    window.parent.postMessage({ type: 'miniapp:ready' }, '*');
+type HostAPI = {
+  ready: () => void;
+  signin: () => void;
+  composeCast: (data: { text: string; url?: string }) => void;
+  openUrl: (url: string) => void;
+};
+
+declare global {
+  interface Window {
+    __MINIAPP_HOST__?: HostAPI;
   }
 }
 
-export function signin() {
-  if (typeof window !== 'undefined' && window.parent) {
-    window.parent.postMessage({ type: 'miniapp:signin' }, '*');
-  } else {
-    window.open('https://warpcast.com', '_blank');
-  }
-}
+const fallback: HostAPI = {
+  ready: () => {},
+  signin: () => alert('Signin no disponible fuera del host'),
+  composeCast: ({ text, url }) => {
+    const u = new URL('https://warpcast.com/~/compose');
+    u.searchParams.set('text', `${text}${url ? ' ' + url : ''}`);
+    window.open(u.toString(), '_blank');
+  },
+  openUrl: (url) => window.open(url, '_blank'),
+};
 
-export function composeCast(text: string) {
-  if (typeof window !== 'undefined' && window.parent) {
-    window.parent.postMessage(
-      {
-        type: 'miniapp:composeCast',
-        data: { text },
-      },
-      '*'
-    );
-  } else {
-    const url = `https://warpcast.com/compose?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-  }
-}
-
-export function openUrl(url: string) {
-  if (typeof window !== 'undefined' && window.parent) {
-    window.parent.postMessage(
-      {
-        type: 'miniapp:openUrl',
-        data: { url },
-      },
-      '*'
-    );
-  } else {
-    window.open(url, '_blank');
-  }
+export function useMiniApp(): HostAPI {
+  return (typeof window !== 'undefined' && window.__MINIAPP_HOST__) || fallback;
 }

@@ -1,36 +1,27 @@
 import './globals.css';
 import type { Metadata } from 'next';
 
+const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://miniapp-sn.vercel.app';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(site),
   title: 'SN Reader — Mini App',
-  description: 'Read Stacker News without leaving Farcaster.',
+  description: 'Lee Stacker News sin salir del cliente Farcaster.',
   openGraph: {
     title: 'SN Reader — Mini App',
-    description: 'Read Stacker News without leaving Farcaster.',
-    images: [
-      {
-        url: '/og.png',
-        width: 1200,
-        height: 630,
-        alt: 'SN Reader',
-      },
-    ],
+    description: 'Lee Stacker News sin salir del cliente Farcaster.',
+    images: ['/og.png'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SN Reader — Mini App',
-    description: 'Read Stacker News without leaving Farcaster.',
+    description: 'Lee Stacker News sin salir del cliente Farcaster.',
     images: ['/og.png'],
   },
   other: {
-    'fc:miniapp': 'https://sn-reader-farcaster.bolt.host',
+    'fc:miniapp': 'v1',
     'fc:frame': 'vNext',
-    'fc:frame:image': 'https://sn-reader-farcaster.bolt.host/og.png',
-    'fc:frame:image:aspect_ratio': '1.91:1',
-    'fc:frame:button:1': 'Open Mini App',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': 'https://sn-reader-farcaster.bolt.host',
   },
 };
 

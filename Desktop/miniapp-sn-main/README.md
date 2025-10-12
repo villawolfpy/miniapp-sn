@@ -125,66 +125,29 @@ Run these commands after deploying to verify your Mini App configuration:
 ### 1. Check Meta Tags
 
 ```bash
-curl -sS https://sn-reader-farcaster.bolt.host/ | grep -i 'fc:miniapp\|fc:frame'
+curl -sS https://<tu-dominio>/ | grep -i 'fc:miniapp\|fc:frame'
 ```
-
-**Expected output:**
-- Should find `fc:miniapp` meta tag with your domain
-- Should find `fc:frame` meta tag with value `vNext`
-- Should find `fc:frame:button:1` and related frame tags
 
 ### 2. Check Manifest
 
 ```bash
-curl -I https://sn-reader-farcaster.bolt.host/.well-known/farcaster.json
-```
-
-**Expected output:**
-```
-HTTP/2 200
-content-type: application/json
-access-control-allow-origin: *
-```
-
-```bash
-curl -s https://sn-reader-farcaster.bolt.host/.well-known/farcaster.json | jq
-```
-
-**Expected output:**
-```json
-{
-  "name": "SN Reader",
-  "iconUrl": "https://sn-reader-farcaster.bolt.host/icon.png",
-  "homeUrl": "https://sn-reader-farcaster.bolt.host",
-  "splash": {
-    "imageUrl": "https://sn-reader-farcaster.bolt.host/splash.png",
-    "backgroundColor": "#ffffff"
-  },
-  "appUrl": "https://sn-reader-farcaster.bolt.host",
-  "author": {
-    "name": "SN Reader Team",
-    "url": "https://sn-reader-farcaster.bolt.host"
-  }
-}
+curl -I https://<tu-dominio>/.well-known/farcaster.json
+curl -s https://<tu-dominio>/.well-known/farcaster.json | jq
 ```
 
 ### 3. Check Assets
 
 ```bash
-curl -I https://sn-reader-farcaster.bolt.host/icon.png
-curl -I https://sn-reader-farcaster.bolt.host/splash.png
-curl -I https://sn-reader-farcaster.bolt.host/og.png
+curl -I https://<tu-dominio>/icon.png
+curl -I https://<tu-dominio>/splash.png
+curl -I https://<tu-dominio>/og.png
 ```
-
-**Expected output for all:** `HTTP/2 200`
 
 ### 4. Check API Endpoint
 
 ```bash
-curl -s https://sn-reader-farcaster.bolt.host/api/rss?territory=bitcoin | jq '.items | length'
+curl -sS 'https://<tu-dominio>/api/rss?territory=bitcoin' | head
 ```
-
-**Expected output:** Number of posts (e.g., `20`)
 
 ### 5. Test in Farcaster
 
