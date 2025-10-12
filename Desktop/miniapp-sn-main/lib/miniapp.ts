@@ -12,14 +12,31 @@ declare global {
 }
 
 const fallback: HostAPI = {
-  ready: () => {},
-  signin: () => alert('Signin no disponible fuera del host'),
-  composeCast: ({ text, url }) => {
-    const u = new URL('https://warpcast.com/~/compose');
-    u.searchParams.set('text', `${text}${url ? ' ' + url : ''}`);
-    window.open(u.toString(), '_blank');
+  ready: () => {
+    console.log('Mini app ready (fallback mode)');
   },
-  openUrl: (url) => window.open(url, '_blank'),
+  signin: () => {
+    console.log('Signin no disponible fuera del host');
+    alert('Signin no disponible fuera del host');
+  },
+  composeCast: ({ text, url }) => {
+    try {
+      const u = new URL('https://warpcast.com/~/compose');
+      u.searchParams.set('text', `${text}${url ? ' ' + url : ''}`);
+      window.open(u.toString(), '_blank');
+    } catch (error) {
+      console.error('Error opening compose:', error);
+      alert('Error al abrir el compositor');
+    }
+  },
+  openUrl: (url) => {
+    try {
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error opening URL:', error);
+      alert('Error al abrir la URL');
+    }
+  },
 };
 
 export function useMiniApp(): HostAPI {

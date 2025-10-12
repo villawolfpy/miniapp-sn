@@ -1,15 +1,16 @@
 # SN Reader — Farcaster Mini App
 
-A Farcaster Mini App for reading Stacker News posts directly within your Farcaster client.
+Una Mini App de Farcaster para leer posts de Stacker News directamente desde tu cliente de Farcaster.
 
-## Features
+## Características
 
-- Browse Stacker News by territory (Bitcoin, Tech, Nostr, Meta, Recent)
-- View post details with sharing capabilities
-- Native integration with Farcaster via Mini Apps SDK
-- Bilingual support (English/Spanish)
-- Optimized for mobile (424×695 viewport)
-- Edge-optimized API with caching
+- Navegar por Stacker News por territorio (Bitcoin, Tech, Nostr, Meta, Recientes)
+- Ver detalles de posts con capacidades de compartir
+- Integración nativa con Farcaster via Mini Apps SDK
+- Soporte bilingüe (Inglés/Español)
+- Optimizado para móvil (viewport 424×695)
+- API optimizada con Edge Runtime y caché
+- Manejo robusto de errores y estados de carga
 
 ## Tech Stack
 
