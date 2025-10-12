@@ -1,0 +1,14 @@
+{
+  "name": "SN Reader",
+  "iconUrl": "https://sn-reader-farcaster.bolt.host/icon.png",
+  "homeUrl": "https://sn-reader-farcaster.bolt.host",
+  "appUrl": "https://sn-reader-farcaster.bolt.host",
+  "splash": {
+    "imageUrl": "https://sn-reader-farcaster.bolt.host/splash.png",
+    "backgroundColor": "#ffffff"
+  },
+  "author": {
+    "name": "SN Reader Team",
+    "url": "https://sn-reader-farcaster.bolt.host"
+  }
+}
