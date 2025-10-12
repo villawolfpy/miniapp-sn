@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { useMiniApp } from '@/lib/miniapp';
 import MiniAppFallback from '@/components/MiniAppFallback';
 
-// Removed dynamic = 'force-static' as it conflicts with client-side hooks
-
 type PostItem = {
   id: string;
   title: string;
@@ -22,33 +20,23 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInMiniApp, setIsInMiniApp] = useState(false);
-  const [isCheckingContext, setIsCheckingContext] = useState(true);
 
   useEffect(() => {
-    // Detectar contexto de Mini App
-    const checkContext = () => {
-      if (typeof window === 'undefined') {
-        setIsInMiniApp(false);
-        setIsCheckingContext(false);
-        return;
-      }
-
+    // Detectar contexto de Mini App de forma simple
+    if (typeof window !== 'undefined') {
       const inIframe = window.parent !== window;
       const hasMiniAppHost = window.__MINIAPP_HOST__ !== undefined;
-      
       setIsInMiniApp(inIframe || hasMiniAppHost);
-      setIsCheckingContext(false);
       
       if (inIframe || hasMiniAppHost) {
         host.ready();
       }
-    };
-
-    const timer = setTimeout(checkContext, 100);
-    return () => clearTimeout(timer);
+    }
   }, [host]);
 
   useEffect(() => {
+    if (!isInMiniApp) return;
+    
     setLoading(true);
     setError(null);
     fetch(`/api/rss?territory=${territory}`)
@@ -70,19 +58,7 @@ export default function Home() {
         setItems([]);
       })
       .finally(() => setLoading(false));
-  }, [territory]);
-
-  // Mostrar fallback si no estamos en Mini App
-  if (isCheckingContext) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [territory, isInMiniApp]);
 
   if (!isInMiniApp) {
     return <MiniAppFallback />;
@@ -96,7 +72,7 @@ export default function Home() {
         onChange={(e) => setTerritory(e.target.value)}
         className="border p-2 w-full mb-3"
       >
-        <option value="recent">Recent</option>
+        <option value="recent">Recientes</option>
         <option value="bitcoin">Bitcoin</option>
         <option value="tech">Tech</option>
         <option value="nostr">Nostr</option>

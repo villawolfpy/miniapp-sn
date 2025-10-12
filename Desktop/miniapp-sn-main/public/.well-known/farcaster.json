@@ -2,13 +2,13 @@
   "version": "1.0.0",
   "name": "SN Reader",
   "description": "Lee Stacker News sin salir del cliente Farcaster",
-  "iconUrl": "https://miniapp-sn.vercel.app/icon.png",
-  "homeUrl": "https://miniapp-sn.vercel.app",
+  "iconUrl": "https://pink-books-grow.loca.lt/icon.png",
+  "homeUrl": "https://pink-books-grow.loca.lt",
   "splash": {
-    "imageUrl": "https://miniapp-sn.vercel.app/splash.png",
+    "imageUrl": "https://pink-books-grow.loca.lt/splash.png",
     "aspectRatio": "424:695"
   },
-  "appUrl": "https://miniapp-sn.vercel.app",
+  "appUrl": "https://pink-books-grow.loca.lt",
   "permissions": [
     "camera",
     "microphone"

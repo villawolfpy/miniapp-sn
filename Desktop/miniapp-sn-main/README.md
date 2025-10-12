@@ -2,246 +2,80 @@
 
 Una Mini App de Farcaster para leer posts de Stacker News directamente desde tu cliente de Farcaster.
 
-## Características
+## 🚀 Demo en Vivo
 
-- Navegar por Stacker News por territorio (Bitcoin, Tech, Nostr, Meta, Recientes)
-- Ver detalles de posts con capacidades de compartir
-- Integración nativa con Farcaster via Mini Apps SDK
-- Soporte bilingüe (Inglés/Español)
-- Optimizado para móvil (viewport 424×695)
-- API optimizada con Edge Runtime y caché
-- Manejo robusto de errores y estados de carga
+**URL de la Mini App:** https://pink-books-grow.loca.lt
 
-## Tech Stack
+## ✨ Características
 
-- **Next.js 14** (App Router)
+- 📱 **Navegación por territorios**: Bitcoin, Tech, Nostr, Meta, Recientes
+- 🔗 **Compartir posts**: Directamente en Farcaster
+- 🌐 **Abrir enlaces**: En navegador externo
+- 🎨 **UI profesional**: Optimizada para móvil (424×695)
+- ⚡ **API Edge**: Optimizada con caché
+- 🛡️ **Manejo de errores**: Estados robustos y reintentos
+
+## 🛠️ Tecnologías
+
+- **Next.js 15** (App Router)
 - **TypeScript**
 - **Tailwind CSS**
-- **Edge Runtime** for API routes
-- **Farcaster Mini Apps SDK** (postMessage-based)
+- **Edge Runtime** para API routes
+- **Farcaster Mini Apps SDK**
 
-## Project Structure
+## 📱 Cómo Usar
 
-```
-/app
-  /api/rss/route.ts          # Edge API for RSS fetching
-  /post/[id]/page.tsx         # Post detail view
-  /page.tsx                   # Home with territory selector
-  /layout.tsx                 # Meta tags & layout
-/components
-  /PostList.tsx               # Post list component
-  /TerritorySelector.tsx      # Territory picker
-  /MiniAppProvider.tsx        # Mini App SDK wrapper
-/lib
-  /miniapp.ts                 # SDK hooks (ready, signin, composeCast, etc.)
-  /i18n.ts                    # Bilingual strings
-  /rss.ts                     # RSS fetching & parsing
-/public
-  /icon.svg                   # 192×192 app icon
-  /splash.svg                 # 424×695 splash screen
-  /og.svg                     # 1200×630 OG image
-  /.well-known/farcaster.json # Mini App manifest
-  /robots.txt
-```
+1. **Comparte el enlace** https://pink-books-grow.loca.lt en Farcaster
+2. **Haz clic en "Abrir Mini App"** en la tarjeta que aparece
+3. **Navega por territorios** usando el selector
+4. **Comparte posts** o **abre enlaces** según necesites
 
-## Development
-
-### Installation
+## 🔧 Desarrollo
 
 ```bash
+# Instalar dependencias
 npm install
-```
 
-### Local Development
-
-Since Mini Apps require an iframe context, you'll need to expose your local dev server:
-
-#### Option 1: Cloudflared Tunnel
-
-```bash
-# Install cloudflared
-brew install cloudflared  # macOS
-# or download from https://github.com/cloudflare/cloudflared/releases
-
-# Start Next.js dev server
+# Desarrollo local
 npm run dev
 
-# In another terminal, create tunnel
-cloudflared tunnel --url http://localhost:3000
-```
-
-#### Option 2: ngrok
-
-```bash
-# Install ngrok
-npm install -g ngrok
-
-# Start Next.js dev server
-npm run dev
-
-# In another terminal, create tunnel
-ngrok http 3000
-```
-
-### Update URLs
-
-Before deploying or testing, update these files with your actual domain:
-
-1. **app/layout.tsx**: Update `fc:miniapp`, `fc:frame:button:1:target`, and `fc:frame:image` URLs
-2. **public/.well-known/farcaster.json**: Update all URLs (iconUrl, homeUrl, splash.imageUrl, appUrl)
-
-### Type Checking
-
-```bash
-npm run typecheck
-```
-
-### Build
-
-```bash
+# Build para producción
 npm run build
 ```
 
-## Deployment
+## 📊 API
 
-### Deploy to Vercel
+### GET `/api/rss?territory=bitcoin`
 
-```bash
-# Install Vercel CLI
-npm install -g vercel
+Obtiene posts de Stacker News por territorio.
 
-# Deploy
-vercel
+**Parámetros:**
+- `territory`: `recent` | `bitcoin` | `tech` | `nostr` | `meta`
 
-# Production deployment
-vercel --prod
+**Respuesta:**
+```json
+{
+  "items": [
+    {
+      "id": "string",
+      "title": "string", 
+      "url": "string",
+      "points": "number",
+      "by": "string",
+      "timeAgo": "string"
+    }
+  ]
+}
 ```
 
-After deployment, update all URLs in the files mentioned above with your production domain.
+## 🎯 Territorios Disponibles
 
-## Verification Checklist
+- **recent**: Posts recientes
+- **bitcoin**: Temas de Bitcoin
+- **tech**: Tecnología
+- **nostr**: Protocolo Nostr
+- **meta**: Meta (Stacker News)
 
-Run these commands after deploying to verify your Mini App configuration:
-
-### 1. Check Meta Tags
-
-```bash
-curl -sS https://<tu-dominio>/ | grep -i 'fc:miniapp\|fc:frame'
-```
-
-### 2. Check Manifest
-
-```bash
-curl -I https://<tu-dominio>/.well-known/farcaster.json
-curl -s https://<tu-dominio>/.well-known/farcaster.json | jq
-```
-
-### 3. Check Assets
-
-```bash
-curl -I https://<tu-dominio>/icon.png
-curl -I https://<tu-dominio>/splash.png
-curl -I https://<tu-dominio>/og.png
-```
-
-### 4. Check API Endpoint
-
-```bash
-curl -sS 'https://<tu-dominio>/api/rss?territory=bitcoin' | head
-```
-
-### 5. Test in Farcaster
-
-1. Share your domain URL in a cast
-2. The cast should display:
-   - 3:2 aspect ratio image (OG image)
-   - "Open Mini App" button
-3. Click the button to open the Mini App in a modal
-4. The app should:
-   - Hide the splash screen after `ready()` is called
-   - Display the territory selector and post list
-   - Allow navigation to post details
-5. Test `Sign In` button (if host supports it)
-6. Test `Share` button in post detail (should call `composeCast()`)
-
-### 6. Check Headers
-
-```bash
-curl -I https://your-domain.com/api/rss?territory=bitcoin
-```
-
-**Expected output:** Should include `Cache-Control` header
-
-## Mini App SDK Functions
-
-The app uses these Mini App SDK functions via `useMiniApp()` hook:
-
-- **ready()**: Called on mount to hide splash screen
-- **signin()**: Requests user authentication (if supported by host)
-- **composeCast(text)**: Opens cast composer with pre-filled text
-- **openUrl(url)**: Opens external URL
-- **close()**: Closes the Mini App modal
-- **viewProfile(fid)**: Opens user profile
-
-## Configuration
-
-### Environment Variables
-
-No environment variables are required. The app uses public Stacker News RSS feeds.
-
-### Territories
-
-Available territories are configured in `components/TerritorySelector.tsx`:
-
-- bitcoin
-- tech
-- nostr
-- meta
-- recent (all posts)
-
-Add more by editing the `TERRITORIES` array.
-
-### i18n
-
-Translations are in `lib/i18n.ts`. Currently supports:
-
-- English (en)
-- Spanish (es)
-
-Add more languages by extending the `translations` object.
-
-## Troubleshooting
-
-### Meta tags not showing
-
-- Ensure you're checking the actual HTML source, not browser dev tools (Next.js may hydrate differently)
-- Check that `app/layout.tsx` has the correct `metadata` export
-
-### Manifest 404
-
-- Ensure `public/.well-known/farcaster.json` exists
-- Check `next.config.js` headers configuration
-- Verify `vercel.json` rewrites
-
-### Mini App SDK not working
-
-- The app must be loaded in an iframe context (Farcaster client)
-- Check browser console for postMessage errors
-- Ensure `MiniAppProvider` wraps your components
-
-### RSS API errors
-
-- Check network tab for API response
-- Verify Stacker News RSS feeds are accessible
-- Check `lib/rss.ts` parsing logic
-
-## References
-
-- [Farcaster Mini Apps Specification](https://miniapps.farcaster.xyz/docs/specification)
-- [Farcaster Frames Documentation](https://docs.farcaster.xyz/reference/frames-redirect)
-- [Stacker News](https://stacker.news)
-- [GitHub Repository](https://github.com/villawolfpy/sn1) (reference implementation)
-
-## License
+## 📄 Licencia
 
 MIT
