@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   other: {
     'fc:miniapp': 'v1',
     'fc:frame': 'vNext',
+    'fc:frame:image': 'https://miniapp-sn.vercel.app/og.png',
+    'fc:frame:button:1': 'Abrir Mini App',
+    'fc:frame:button:1:target': 'https://miniapp-sn.vercel.app',
   },
 };
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMiniApp } from '@/lib/miniapp';
+import MiniAppFallback from '@/components/MiniAppFallback';
 
 // Removed dynamic = 'force-static' as it conflicts with client-side hooks
 
@@ -20,9 +21,31 @@ export default function Home() {
   const [items, setItems] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInMiniApp, setIsInMiniApp] = useState(false);
+  const [isCheckingContext, setIsCheckingContext] = useState(true);
 
   useEffect(() => {
-    host.ready();
+    // Detectar contexto de Mini App
+    const checkContext = () => {
+      if (typeof window === 'undefined') {
+        setIsInMiniApp(false);
+        setIsCheckingContext(false);
+        return;
+      }
+
+      const inIframe = window.parent !== window;
+      const hasMiniAppHost = window.__MINIAPP_HOST__ !== undefined;
+      
+      setIsInMiniApp(inIframe || hasMiniAppHost);
+      setIsCheckingContext(false);
+      
+      if (inIframe || hasMiniAppHost) {
+        host.ready();
+      }
+    };
+
+    const timer = setTimeout(checkContext, 100);
+    return () => clearTimeout(timer);
   }, [host]);
 
   useEffect(() => {
@@ -48,6 +71,22 @@ export default function Home() {
       })
       .finally(() => setLoading(false));
   }, [territory]);
+
+  // Mostrar fallback si no estamos en Mini App
+  if (isCheckingContext) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isInMiniApp) {
+    return <MiniAppFallback />;
+  }
 
   return (
     <main className="mx-auto max-w-sm p-4">

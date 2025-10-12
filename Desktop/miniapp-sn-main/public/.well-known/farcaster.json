@@ -1,14 +1,16 @@
 {
+  "version": "1.0.0",
   "name": "SN Reader",
-  "iconUrl": "/icon.png",
-  "homeUrl": "/",
-  "appUrl": "/",
+  "description": "Lee Stacker News sin salir del cliente Farcaster",
+  "iconUrl": "https://miniapp-sn.vercel.app/icon.png",
+  "homeUrl": "https://miniapp-sn.vercel.app",
   "splash": {
-    "imageUrl": "/splash.png",
-    "backgroundColor": "#0B1220"
+    "imageUrl": "https://miniapp-sn.vercel.app/splash.png",
+    "aspectRatio": "424:695"
   },
-  "author": {
-    "name": "villawolf",
-    "url": "/"
-  }
+  "appUrl": "https://miniapp-sn.vercel.app",
+  "permissions": [
+    "camera",
+    "microphone"
+  ]
 }

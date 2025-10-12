@@ -40,5 +40,14 @@ const fallback: HostAPI = {
 };
 
 export function useMiniApp(): HostAPI {
-  return (typeof window !== 'undefined' && window.__MINIAPP_HOST__) || fallback;
+  if (typeof window === 'undefined') {
+    return fallback;
+  }
+  
+  // Detectar si estamos en un contexto de Mini App
+  const isInMiniApp = window.parent !== window || 
+                     window.location !== window.parent.location ||
+                     window.__MINIAPP_HOST__ !== undefined;
+  
+  return isInMiniApp ? (window.__MINIAPP_HOST__ || fallback) : fallback;
 }
