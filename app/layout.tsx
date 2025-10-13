@@ -5,35 +5,28 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SN Reader — Mini App',
-  description: 'Read Stacker News without leaving Farcaster.',
+  title: "Stacker News Frames",
+  description:
+    "Frame v2 para explorar los posts recientes de los territorios de Stacker News usando su RSS oficial.",
   openGraph: {
-    title: 'SN Reader — Mini App',
-    description: 'Read Stacker News without leaving Farcaster.',
+    title: "Stacker News Frames",
+    description:
+      "Explora posts recientes de Stacker News dentro de Farcaster Frames con navegación y selección de territorios.",
     images: [
       {
-        url: '/og.svg',
+        url: "/og.png",
         width: 1200,
         height: 630,
-        alt: 'SN Reader',
+        alt: "Stacker News Frames",
       },
     ],
-    type: 'website',
+    type: "website",
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'SN Reader — Mini App',
-    description: 'Read Stacker News without leaving Farcaster.',
-    images: ['/og.svg'],
-  },
-  other: {
-    'fc:miniapp': 'https://yourdomain.com',
-    'fc:frame': 'vNext',
-    'fc:frame:image': 'https://yourdomain.com/og.svg',
-    'fc:frame:image:aspect_ratio': '1.91:1',
-    'fc:frame:button:1': 'Open Mini App',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': 'https://yourdomain.com',
+    card: "summary_large_image",
+    title: "Stacker News Frames",
+    description: "Explora los territorios de Stacker News sin salir de Farcaster.",
+    images: ["/og.png"],
   },
 };
 
@@ -45,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/icon.png" type="image/png" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>

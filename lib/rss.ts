@@ -1,118 +1,119 @@
-export interface PostItem {
-  id: string;
+import { CACHE_TTL_SECONDS, DEFAULT_TERRITORY } from "./constants";
+import { normalizeTerritory } from "./territories";
+
+export type TerritoryFeedItem = {
   title: string;
-  url: string;
-  points: number;
-  by: string;
-  timeAgo: string;
-  description?: string;
+  link: string;
+  isoDate?: string;
+  creator?: string;
+  sats?: number | null;
+  comments?: number | null;
+};
+
+export type TerritoryFeed = {
+  territory: string;
+  items: TerritoryFeedItem[];
+};
+
+type CacheEntry = {
+  expiresAt: number;
+  feed: TerritoryFeed;
+};
+
+const feedCache = new Map<string, CacheEntry>();
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/<!\[CDATA\[(.*?)(\]\]>)?/gs, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 }
 
-export interface RSSResponse {
-  items: PostItem[];
-  error?: string;
-}
-
-export async function fetchStackerNewsRSS(
-  territory: string = 'bitcoin',
-  page: number = 1
-): Promise<RSSResponse> {
-  try {
-    const rssUrl = territory === 'recent'
-      ? 'https://stacker.news/rss'
-      : `https://stacker.news/~${territory}/rss`;
-
-    const response = await fetch(rssUrl, {
-      next: { revalidate: 300 },
-    });
-
-    if (!response.ok) {
-      throw new Error(`RSS fetch failed: ${response.status}`);
-    }
-
-    const xmlText = await response.text();
-    const items = parseRSS(xmlText);
-
-    return { items };
-  } catch (error) {
-    console.error('RSS fetch error:', error);
-    return {
-      items: [],
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+function extractTag(xml: string, tag: string): string | null {
+  const pattern = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const match = xml.match(pattern);
+  if (!match) {
+    return null;
   }
+  return decodeHtml(match[1]);
 }
 
-function parseRSS(xmlText: string): PostItem[] {
-  const items: PostItem[] = [];
+function parseNumber(value: string | null, pattern: RegExp): number | null {
+  if (!value) {
+    return null;
+  }
+  const match = value.match(pattern);
+  if (!match) {
+    return null;
+  }
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
-  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-  let match;
+function parseItems(xml: string): TerritoryFeedItem[] {
+  const items: TerritoryFeedItem[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  let match: RegExpExecArray | null;
 
-  while ((match = itemRegex.exec(xmlText)) !== null) {
-    const itemContent = match[1];
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const itemXml = match[1];
+    const title = extractTag(itemXml, "title") ?? "Sin título";
+    const link = extractTag(itemXml, "link") ?? "";
+    const isoDate = extractTag(itemXml, "pubDate") ?? undefined;
+    const creator = extractTag(itemXml, "dc:creator") ?? extractTag(itemXml, "author") ?? undefined;
+    const description = extractTag(itemXml, "content:encoded") ?? extractTag(itemXml, "description");
 
-    const title = extractTag(itemContent, 'title');
-    const link = extractTag(itemContent, 'link');
-    const description = extractTag(itemContent, 'description');
-    const pubDate = extractTag(itemContent, 'pubDate');
-
-    const pointsMatch = description?.match(/(\d+)\s+point/);
-    const points = pointsMatch ? parseInt(pointsMatch[1], 10) : 0;
-
-    const authorMatch = description?.match(/by\s+([^\s<]+)/);
-    const by = authorMatch ? authorMatch[1] : 'unknown';
-
-    const id = link?.split('/').filter(Boolean).pop() || '';
+    const sats = parseNumber(description, /(\d+)\s+sats?/i);
+    const comments = parseNumber(description, /(\d+)\s+comment/iu);
 
     items.push({
-      id,
-      title: decodeHtml(title || ''),
-      url: link || '',
-      points,
-      by,
-      timeAgo: formatTimeAgo(pubDate || ''),
-      description: stripHtml(description || ''),
+      title,
+      link,
+      isoDate,
+      creator,
+      sats,
+      comments,
     });
   }
 
   return items;
 }
 
-function extractTag(content: string, tagName: string): string | null {
-  const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\/${tagName}>`, 'i');
-  const match = content.match(regex);
-  return match ? match[1].trim() : null;
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`No se pudo descargar el feed (${response.status})`);
+    }
+    return await response.text();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-function decodeHtml(html: string): string {
-  const entities: Record<string, string> = {
-    '&amp;': '&',
-    '&lt;': '<',
-    '&gt;': '>',
-    '&quot;': '"',
-    '&#39;': "'",
-    '&nbsp;': ' ',
-  };
+export async function fetchTerritoryFeed(rawTerritory: string): Promise<TerritoryFeed> {
+  const territory = normalizeTerritory(rawTerritory) ?? DEFAULT_TERRITORY;
+  const now = Date.now();
+  const cached = feedCache.get(territory);
+  if (cached && cached.expiresAt > now) {
+    return cached.feed;
+  }
 
-  return html.replace(/&[^;]+;/g, (entity) => entities[entity] || entity);
-}
+  const url = `https://stacker.news/${territory}/rss`;
+  const xml = await fetchWithTimeout(url, 5000);
+  const items = parseItems(xml);
+  const feed: TerritoryFeed = { territory, items };
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').substring(0, 200);
-}
+  feedCache.set(territory, {
+    expiresAt: now + CACHE_TTL_SECONDS * 1000,
+    feed,
+  });
 
-function formatTimeAgo(dateString: string): string {
-  if (!dateString) return '';
-
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${diffDays}d ago`;
+  return feed;
 }

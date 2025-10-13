@@ -1,283 +1,86 @@
-# SN Reader — Farcaster Mini App
+# Miniapp SN — Frames para Stacker News
 
-A Farcaster Mini App for reading Stacker News posts directly within your Farcaster client.
+Mini-aplicación basada en Next.js que expone un Frame v2 para Farcaster. El frame consume los feeds RSS de los territorios de [Stacker News](https://stacker.news) y permite navegar entre los posts recientes, abrirlos en el sitio y cambiar de territorio sin salir de Warpcaster u otro cliente compatible.
 
-## Features
+## Características
 
-- Browse Stacker News by territory (Bitcoin, Tech, Nostr, Meta, Recent)
-- View post details with sharing capabilities
-- Native integration with Farcaster via Mini Apps SDK
-- Bilingual support (English/Spanish)
-- Optimized for mobile (424×695 viewport)
-- Edge-optimized API with caching
+- Next.js (app router) escrito en TypeScript.
+- Rutas serverless para `/frames/sn` (feed) y `/frames/sn/select` (selector de territorios).
+- Imagen dinámica generada con `@vercel/og`/`ImageResponse`.
+- Caché en memoria de 5 minutos para el RSS de cada territorio.
+- Controles de navegación: anterior, siguiente, abrir post y cambiar territorio.
+- Selector rápido de territorios predefinidos con opción para introducir uno personalizado.
 
-## Tech Stack
+## Requisitos previos
 
-- **Next.js 14** (App Router)
-- **TypeScript**
-- **Tailwind CSS**
-- **Edge Runtime** for API routes
-- **Farcaster Mini Apps SDK** (postMessage-based)
+- Node.js 18 o superior (recomendado 20+).
+- npm 9+.
 
-## Project Structure
-
-```
-/app
-  /api/rss/route.ts          # Edge API for RSS fetching
-  /post/[id]/page.tsx         # Post detail view
-  /page.tsx                   # Home with territory selector
-  /layout.tsx                 # Meta tags & layout
-/components
-  /PostList.tsx               # Post list component
-  /TerritorySelector.tsx      # Territory picker
-  /MiniAppProvider.tsx        # Mini App SDK wrapper
-/lib
-  /miniapp.ts                 # SDK hooks (ready, signin, composeCast, etc.)
-  /i18n.ts                    # Bilingual strings
-  /rss.ts                     # RSS fetching & parsing
-/public
-  /icon.svg                   # 192×192 app icon
-  /splash.svg                 # 424×695 splash screen
-  /og.svg                     # 1200×630 OG image
-  /.well-known/farcaster.json # Mini App manifest
-  /robots.txt
-```
-
-## Development
-
-### Installation
+## Instalación
 
 ```bash
 npm install
 ```
 
-### Local Development
+> Si se actualizan variables como el territorio por defecto, recuerda reiniciar el servidor de desarrollo.
 
-Since Mini Apps require an iframe context, you'll need to expose your local dev server:
+## Scripts disponibles
 
-#### Option 1: Cloudflared Tunnel
+- `npm run dev`: inicia el entorno de desarrollo en `http://localhost:3000`.
+- `npm run build`: genera el build de producción.
+- `npm run start`: ejecuta el build de producción.
 
-```bash
-# Install cloudflared
-brew install cloudflared  # macOS
-# or download from https://github.com/cloudflare/cloudflared/releases
+## Configuración
 
-# Start Next.js dev server
-npm run dev
+Variables de entorno opcionales:
 
-# In another terminal, create tunnel
-cloudflared tunnel --url http://localhost:3000
-```
+- `DEFAULT_TERRITORY` — territorio inicial (por defecto `~bitcoin`).
+- `CACHE_TTL_SECONDS` — duración de la caché RSS en segundos (por defecto `300`).
+- `ALLOWED_TERRITORIES` — lista separada por comas para el selector rápido (por defecto `~bitcoin,~nostr,~design,~jobs`).
 
-#### Option 2: ngrok
+## Endpoints clave
 
-```bash
-# Install ngrok
-npm install -g ngrok
+| Ruta | Descripción |
+|------|-------------|
+| `/frames/sn` | Frame principal. Lee el estado `{ territory, index }`, consume el RSS y responde con la imagen + botones. |
+| `/frames/sn/image` | Renderiza la imagen del frame (feed o estados vacíos). |
+| `/frames/sn/select` | Pantalla de selección de territorio dentro del frame. |
 
-# Start Next.js dev server
-npm run dev
+La landing principal (`/`) describe cómo probar el frame y muestra el endpoint.
 
-# In another terminal, create tunnel
-ngrok http 3000
-```
+## Flujo del Frame
 
-### Update URLs
+1. Warpcaster realiza `POST` a `/frames/sn` enviando `state` (territorio e índice) y la `buttonIndex` pulsada.
+2. La ruta descarga el RSS del territorio (con caché 5 minutos) y determina el post actual.
+3. Devuelve un objeto Frame v2 con imagen cuadrada, botones de navegación y enlace al post original.
+4. El botón “Cambiar territorio” envía al frame `/frames/sn/select`, donde se puede elegir uno de los territorios predefinidos o introducir otro.
+5. Al confirmar, se regresa al feed con el nuevo territorio y el índice reiniciado a `0`.
 
-Before deploying or testing, update these files with your actual domain:
+## Pruebas locales
 
-1. **app/layout.tsx**: Update `fc:miniapp`, `fc:frame:button:1:target`, and `fc:frame:image` URLs
-2. **public/.well-known/farcaster.json**: Update all URLs (iconUrl, homeUrl, splash.imageUrl, appUrl)
+1. Ejecuta `npm run dev`.
+2. Desde otra terminal puedes usar [frames.js playground](https://warpcast.com/~/developers/frames) o herramientas similares para enviar requests manuales a `http://localhost:3000/frames/sn`.
+3. Comprueba que:
+   - Se muestra el post más reciente del territorio por defecto.
+   - Los botones “Anterior” y “Siguiente” recorren los posts del feed.
+   - “Abrir post” apunta a la URL real del ítem.
+   - “Cambiar territorio” abre el selector y al elegir uno nuevo vuelve al feed.
 
-### Type Checking
+> Los feeds de Stacker News pueden tardar unos segundos en responder. Existe un timeout de 5s para evitar bloquear la ruta.
 
-```bash
-npm run typecheck
-```
+## Despliegue en Vercel
 
-### Build
+1. Crea un nuevo proyecto en Vercel y selecciona este repositorio.
+2. Configura (opcionalmente) las variables de entorno mencionadas.
+3. Despliega. El runtime de las rutas `/frames/sn` y `/frames/sn/select` está fijado a `edge`, por lo que se ejecutan en la red perimetral de Vercel.
+4. Tras el primer despliegue, usa la URL pública de Vercel como base para el frame (`https://tu-proyecto.vercel.app/frames/sn`).
 
-```bash
-npm run build
-```
+## Uso en Warpcaster
 
-## Deployment
+1. Publica un cast con la URL del frame (`https://tu-proyecto.vercel.app/frames/sn`).
+2. Al abrirlo:
+   - Verás el post más reciente del territorio configurado.
+   - Podrás navegar con los botones y abrir el enlace en Stacker News.
+   - El botón de cambio te permitirá seleccionar otro territorio sin salir del frame.
 
-### Deploy to Vercel
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel
-
-# Production deployment
-vercel --prod
-```
-
-After deployment, update all URLs in the files mentioned above with your production domain.
-
-## Verification Checklist
-
-Run these commands after deploying to verify your Mini App configuration:
-
-### 1. Check Meta Tags
-
-```bash
-curl -sS https://your-domain.com/ | grep -i 'fc:miniapp\|fc:frame'
-```
-
-**Expected output:**
-- Should find `fc:miniapp` meta tag with your domain
-- Should find `fc:frame` meta tag with value `vNext`
-- Should find `fc:frame:button:1` and related frame tags
-
-### 2. Check Manifest
-
-```bash
-curl -I https://your-domain.com/.well-known/farcaster.json
-```
-
-**Expected output:**
-```
-HTTP/2 200
-content-type: application/json
-access-control-allow-origin: *
-```
-
-```bash
-curl -s https://your-domain.com/.well-known/farcaster.json | jq
-```
-
-**Expected output:**
-```json
-{
-  "name": "SN Reader",
-  "iconUrl": "https://your-domain.com/icon.svg",
-  "homeUrl": "https://your-domain.com",
-  "splash": {
-    "imageUrl": "https://your-domain.com/splash.svg",
-    "backgroundColor": "#1e40af"
-  },
-  "appUrl": "https://your-domain.com",
-  "author": {
-    "name": "SN Reader Team",
-    "url": "https://your-domain.com"
-  }
-}
-```
-
-### 3. Check Assets
-
-```bash
-curl -I https://your-domain.com/icon.svg
-curl -I https://your-domain.com/splash.svg
-curl -I https://your-domain.com/og.svg
-```
-
-**Expected output for all:** `HTTP/2 200`
-
-### 4. Check API Endpoint
-
-```bash
-curl -s https://your-domain.com/api/rss?territory=bitcoin | jq '.items | length'
-```
-
-**Expected output:** Number of posts (e.g., `20`)
-
-### 5. Test in Farcaster
-
-1. Share your domain URL in a cast
-2. The cast should display:
-   - 3:2 aspect ratio image (OG image)
-   - "Open Mini App" button
-3. Click the button to open the Mini App in a modal
-4. The app should:
-   - Hide the splash screen after `ready()` is called
-   - Display the territory selector and post list
-   - Allow navigation to post details
-5. Test `Sign In` button (if host supports it)
-6. Test `Share` button in post detail (should call `composeCast()`)
-
-### 6. Check Headers
-
-```bash
-curl -I https://your-domain.com/api/rss?territory=bitcoin
-```
-
-**Expected output:** Should include `Cache-Control` header
-
-## Mini App SDK Functions
-
-The app uses these Mini App SDK functions via `useMiniApp()` hook:
-
-- **ready()**: Called on mount to hide splash screen
-- **signin()**: Requests user authentication (if supported by host)
-- **composeCast(text)**: Opens cast composer with pre-filled text
-- **openUrl(url)**: Opens external URL
-- **close()**: Closes the Mini App modal
-- **viewProfile(fid)**: Opens user profile
-
-## Configuration
-
-### Environment Variables
-
-No environment variables are required. The app uses public Stacker News RSS feeds.
-
-### Territories
-
-Available territories are configured in `components/TerritorySelector.tsx`:
-
-- bitcoin
-- tech
-- nostr
-- meta
-- recent (all posts)
-
-Add more by editing the `TERRITORIES` array.
-
-### i18n
-
-Translations are in `lib/i18n.ts`. Currently supports:
-
-- English (en)
-- Spanish (es)
-
-Add more languages by extending the `translations` object.
-
-## Troubleshooting
-
-### Meta tags not showing
-
-- Ensure you're checking the actual HTML source, not browser dev tools (Next.js may hydrate differently)
-- Check that `app/layout.tsx` has the correct `metadata` export
-
-### Manifest 404
-
-- Ensure `public/.well-known/farcaster.json` exists
-- Check `next.config.js` headers configuration
-- Verify `vercel.json` rewrites
-
-### Mini App SDK not working
-
-- The app must be loaded in an iframe context (Farcaster client)
-- Check browser console for postMessage errors
-- Ensure `MiniAppProvider` wraps your components
-
-### RSS API errors
-
-- Check network tab for API response
-- Verify Stacker News RSS feeds are accessible
-- Check `lib/rss.ts` parsing logic
-
-## References
-
-- [Farcaster Mini Apps Specification](https://miniapps.farcaster.xyz/docs/specification)
-- [Farcaster Frames Documentation](https://docs.farcaster.xyz/reference/frames-redirect)
-- [Stacker News](https://stacker.news)
-- [GitHub Repository](https://github.com/villawolfpy/sn1) (reference implementation)
-
-## License
-
-MIT
+¡Listo! Tienes un Frame v2 funcional para explorar Stacker News desde Farcaster.
