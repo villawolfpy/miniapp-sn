@@ -1,5 +1,0 @@
-<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="630" fill="#1e3a8a"/>
-  <text x="600" y="280" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="white" text-anchor="middle">SN Reader</text>
-  <text x="600" y="380" font-family="Arial, sans-serif" font-size="32" fill="#bfdbfe" text-anchor="middle">Read Stacker News in Farcaster</text>
-</svg>
