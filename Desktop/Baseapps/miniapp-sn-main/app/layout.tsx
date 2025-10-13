@@ -27,13 +27,12 @@ export const metadata: Metadata = {
     images: ['/og.png'],
   },
   other: {
-    'fc:miniapp': 'https://yourdomain.com',
+    'fc:miniapp': 'https://sn-app-eta.vercel.app',
     'fc:frame': 'vNext',
-    'fc:frame:image': 'https://yourdomain.com/og.png',
-    'fc:frame:image:aspect_ratio': '1.91:1',
+    'og:image': 'https://sn-app-eta.vercel.app/og.png',
+    'fc:frame:image': 'https://sn-app-eta.vercel.app/og.png',
     'fc:frame:button:1': 'Open Mini App',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': 'https://yourdomain.com',
+    'fc:frame:button:1:target': 'https://sn-app-eta.vercel.app',
   },
 };
 
