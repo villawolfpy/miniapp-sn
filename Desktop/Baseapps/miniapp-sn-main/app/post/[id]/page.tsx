@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PostItem } from '@/lib/rss';
 import { getBrowserLocale, Locale } from '@/lib/i18n';
-import { useMiniApp } from '@/lib/miniapp';
+import { useMiniKit } from '@/lib/miniapp';
 import { MiniAppProvider } from '@/components/MiniAppProvider';
 import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 
@@ -14,7 +14,8 @@ function PostDetailPage() {
   const [post, setPost] = useState<PostItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [locale, setLocale] = useState<Locale>('en');
-  const { composeCast, openUrl } = useMiniApp();
+  const { composeCast, openUrl } = useMiniKit();
+  // Note: composeCast and openUrl may need to be updated based on MiniKit API
 
   useEffect(() => {
     setLocale(getBrowserLocale());

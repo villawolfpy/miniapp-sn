@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { OnchainKitProvider } from '@coinbase/onchainkit';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -46,7 +47,15 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/icon.png" type="image/png" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <OnchainKitProvider
+          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
+          chain={8453} // Base
+          miniKit={{ enabled: true }}
+        >
+          {children}
+        </OnchainKitProvider>
+      </body>
     </html>
   );
 }

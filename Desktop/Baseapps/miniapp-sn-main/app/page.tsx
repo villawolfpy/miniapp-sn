@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PostItem } from '@/lib/rss';
 import { getBrowserLocale, Locale } from '@/lib/i18n';
-import { useMiniApp } from '@/lib/miniapp';
+import { useMiniKit } from '@/lib/miniapp';
 import { TerritorySelector } from '@/components/TerritorySelector';
 import { PostList } from '@/components/PostList';
 import { MiniAppProvider } from '@/components/MiniAppProvider';
@@ -14,7 +14,8 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locale, setLocale] = useState<Locale>('en');
-  const { signin, context } = useMiniApp();
+  const { signin, context } = useMiniKit();
+  // Note: signin and context properties may need to be updated based on MiniKit API
 
   useEffect(() => {
     setLocale(getBrowserLocale());
