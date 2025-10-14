@@ -4,26 +4,24 @@ A Farcaster Mini App for reading Stacker News posts directly within your Farcast
 
 ## Features
 
-- Browse Stacker News by territory (Bitcoin, Tech, Nostr, Meta, Recent)
-- View post details with sharing capabilities
-- Native integration with Farcaster via Mini Apps SDK
+- Browse Stacker News by territory using the official GraphQL API
+- View post details with Farcaster sharing capabilities (MiniKit when available)
+- Graceful fallback for regular browsers (read-only mode without Farcaster context)
 - Bilingual support (English/Spanish)
 - Optimized for mobile (424×695 viewport)
-- Edge-optimized API with caching
 
 ## Tech Stack
 
 - **Next.js 14** (App Router)
 - **TypeScript**
 - **Tailwind CSS**
-- **Edge Runtime** for API routes
-- **Farcaster Mini Apps SDK** (postMessage-based)
+- **Next.js API routes** proxying Stacker News GraphQL
+- **Base MiniKit detection** with postMessage fallback
 
 ## Project Structure
 
 ```
 /app
-  /api/rss/route.ts          # Edge API for RSS fetching
   /post/[id]/page.tsx         # Post detail view
   /page.tsx                   # Home with territory selector
   /layout.tsx                 # Meta tags & layout
@@ -32,9 +30,15 @@ A Farcaster Mini App for reading Stacker News posts directly within your Farcast
   /TerritorySelector.tsx      # Territory picker
   /MiniAppProvider.tsx        # Mini App SDK wrapper
 /lib
-  /miniapp.ts                 # SDK hooks (ready, signin, composeCast, etc.)
-  /i18n.ts                    # Bilingual strings
-  /rss.ts                     # RSS fetching & parsing
+  /miniapp.ts                 # MiniKit integration with graceful fallback
+  /hooks/usePosts.ts          # Client hook for paginated posts
+  /hooks/useTerritories.ts    # Client hook for territory list
+  /hooks/post-cache.ts        # Session cache helpers shared by hooks/pages
+  /sn/types.ts                # Shared API response types
+  /server/stacker.ts          # Server-side GraphQL helper
+/pages/api/sn
+  /posts.ts                   # GraphQL proxy for posts (list/detail)
+  /territories.ts             # GraphQL proxy for territory catalog
 /public
   /icon.svg                   # 192×192 app icon
   /splash.svg                 # 424×695 splash screen
@@ -43,6 +47,20 @@ A Farcaster Mini App for reading Stacker News posts directly within your Farcast
   /robots.txt
 ```
 
+## Environment Variables
+
+Create an `.env.local` file with the Stacker News GraphQL credentials (ask the SN team for an API key if required):
+
+```bash
+SN_API_URL=https://stacker.news/api/graphql
+SN_API_KEY=your_api_key_here
+```
+
+- `SN_API_URL` — GraphQL endpoint for Stacker News (default shown above).
+- `SN_API_KEY` — Bearer token for authenticated access. Leave blank if your endpoint does not require a key.
+
+These variables are only used on the server (Next.js API routes) and are never exposed to the browser.
+
 ## Development
 
 ### Installation
@@ -50,6 +68,8 @@ A Farcaster Mini App for reading Stacker News posts directly within your Farcast
 ```bash
 npm install
 ```
+
+Create a `.env.local` file (see [Environment Variables](#environment-variables)) before running the dev server so the API routes can proxy requests correctly.
 
 ### Local Development
 
@@ -118,6 +138,8 @@ vercel --prod
 
 After deployment, update all URLs in the files mentioned above with your production domain.
 
+> **Important:** Remember to configure `SN_API_URL` and `SN_API_KEY` in the Vercel project settings (Project → Settings → Environment Variables) before the production deploy. Redeploy after changing secrets so the serverless functions receive the new values.
+
 ## Verification Checklist
 
 Run these commands after deploying to verify your Mini App configuration:
@@ -178,13 +200,17 @@ curl -I https://your-domain.com/og.svg
 
 **Expected output for all:** `HTTP/2 200`
 
-### 4. Check API Endpoint
+### 4. Check API Endpoints
 
 ```bash
-curl -s https://your-domain.com/api/rss?territory=bitcoin | jq '.items | length'
+curl -s https://your-domain.com/api/sn/territories | jq
+curl -s 'https://your-domain.com/api/sn/posts?territory=bitcoin' | jq '.posts | length'
 ```
 
-**Expected output:** Number of posts (e.g., `20`)
+**Expected output:**
+
+- The territories endpoint returns a JSON array of territories
+- The posts endpoint returns a `posts` array and pagination cursor
 
 ### 5. Test in Farcaster
 
@@ -200,51 +226,21 @@ curl -s https://your-domain.com/api/rss?territory=bitcoin | jq '.items | length'
 5. Test `Sign In` button (if host supports it)
 6. Test `Share` button in post detail (should call `composeCast()`)
 
-### 6. Check Headers
-
-```bash
-curl -I https://your-domain.com/api/rss?territory=bitcoin
-```
-
-**Expected output:** Should include `Cache-Control` header
-
 ## Mini App SDK Functions
 
-The app uses these Mini App SDK functions via `useMiniApp()` hook:
+The app uses these Mini App SDK functions via the `useMiniApp()` hook (with graceful fallbacks when MiniKit is unavailable):
 
-- **ready()**: Called on mount to hide splash screen
-- **signin()**: Requests user authentication (if supported by host)
-- **composeCast(text)**: Opens cast composer with pre-filled text
-- **openUrl(url)**: Opens external URL
-- **close()**: Closes the Mini App modal
-- **viewProfile(fid)**: Opens user profile
+- **ready()** — hides the splash screen when embedded inside a Farcaster client
+- **signin()** — prompts Farcaster authentication (no-op on web browsers)
+- **composeCast(text)** — opens the Farcaster composer or copies content to the clipboard
+- **openUrl(url)** — opens external URLs using MiniKit or `window.open`
+- **close()** — closes the Mini App modal if supported by the host
+- **viewProfile(fid)** — opens a Farcaster profile when available
 
 ## Configuration
 
-### Environment Variables
-
-No environment variables are required. The app uses public Stacker News RSS feeds.
-
-### Territories
-
-Available territories are configured in `components/TerritorySelector.tsx`:
-
-- bitcoin
-- tech
-- nostr
-- meta
-- recent (all posts)
-
-Add more by editing the `TERRITORIES` array.
-
-### i18n
-
-Translations are in `lib/i18n.ts`. Currently supports:
-
-- English (en)
-- Spanish (es)
-
-Add more languages by extending the `translations` object.
+- **Territories:** Retrieved dynamically from Stacker News GraphQL via `/api/sn/territories`. The client automatically selects the first territory returned by the API.
+- **i18n:** Translations live in `lib/i18n.ts` (English/Spanish). Extend the `translations` object to add more languages.
 
 ## Troubleshooting
 
@@ -265,11 +261,11 @@ Add more languages by extending the `translations` object.
 - Check browser console for postMessage errors
 - Ensure `MiniAppProvider` wraps your components
 
-### RSS API errors
+### GraphQL API errors
 
-- Check network tab for API response
-- Verify Stacker News RSS feeds are accessible
-- Check `lib/rss.ts` parsing logic
+- Check `/api/sn/territories` and `/api/sn/posts` responses in the browser dev tools
+- Verify `SN_API_URL` and `SN_API_KEY` are set in your environment (and on Vercel)
+- Inspect server logs for `StackerNewsError` messages (invalid key or query)
 
 ## References
 
