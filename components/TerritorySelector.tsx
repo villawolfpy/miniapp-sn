@@ -1,25 +1,29 @@
 'use client';
 
 interface TerritorySelectorProps {
+  territories: Array<{ id: string; name: string }>;
   selected: string;
   onChange: (territory: string) => void;
   locale: 'en' | 'es';
 }
 
-const TERRITORIES = [
-  { id: 'bitcoin', label: 'Bitcoin' },
-  { id: 'tech', label: 'Tech' },
-  { id: 'nostr', label: 'Nostr' },
-  { id: 'meta', label: 'Meta' },
-  { id: 'recent', label: 'Recent' },
-];
-
-export function TerritorySelector({
-  selected,
-  onChange,
-  locale,
-}: TerritorySelectorProps) {
+/**
+ * Displays the list of territories as a horizontally scrollable pill menu.
+ */
+export function TerritorySelector({ territories, selected, onChange, locale }: TerritorySelectorProps) {
   const label = locale === 'es' ? 'Seleccionar Territorio' : 'Select Territory';
+  const loadingLabel = locale === 'es' ? 'Cargando territorios…' : 'Loading territories…';
+
+  if (territories.length === 0) {
+    return (
+      <div className="mb-4">
+        <label className="block text-xs font-medium text-gray-700 mb-2">{label}</label>
+        <div className="rounded-lg border border-dashed border-gray-200 bg-white p-4 text-sm text-gray-500">
+          {loadingLabel}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4">
@@ -27,7 +31,7 @@ export function TerritorySelector({
         {label}
       </label>
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {TERRITORIES.map((territory) => (
+        {territories.map((territory) => (
           <button
             key={territory.id}
             onClick={() => onChange(territory.id)}
@@ -37,7 +41,7 @@ export function TerritorySelector({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {territory.label}
+            {territory.name}
           </button>
         ))}
       </div>

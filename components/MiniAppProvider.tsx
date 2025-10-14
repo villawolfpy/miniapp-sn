@@ -371,19 +371,9 @@ export function MiniAppProvider({ children }: { children: React.ReactNode }) {
   if (!isSupported && checkedSupport) {
     return (
       <MiniAppContext.Provider value={sdkValue}>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
           <div className="text-center max-w-sm">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t.notSupported}</h2>
-            <p className="text-gray-600 mb-4">
-              SN Reader is designed for Base Mini Apps. Use a compatible host to unlock wallet
-              interactions.
-            </p>
-            <a
-              href="https://stacker.news"
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {t.openInBrowser}
-            </a>
+            <h2 className="text-xl font-semibold text-gray-900">{t.notSupported}</h2>
           </div>
         </div>
       </MiniAppContext.Provider>

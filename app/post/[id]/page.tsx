@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { PostItem } from '@/lib/rss';
 import { getBrowserLocale, Locale, useI18n } from '@/lib/i18n';
 import { MiniAppProvider } from '@/components/MiniAppProvider';
 import { ArrowLeft, ExternalLink, Share2, Wallet } from 'lucide-react';
 import { useMiniApp, type Address, type Hex } from '@/lib/miniapp';
 import { truncateAddress, truncateHex } from '@/lib/utils';
+import { fetchPostById, type SnPost } from '@/lib/sn';
 
 const TIP_ADDRESS: Address = '0x1234567890abcdef1234567890abcdef12345678';
 const TIP_VALUE: Hex = `0x${BigInt('100000000000000').toString(16)}`;
@@ -20,7 +20,7 @@ type ShareProof = {
 function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [post, setPost] = useState<PostItem | null>(null);
+  const [post, setPost] = useState<SnPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [locale, setLocale] = useState<Locale>('en');
   const [shareProof, setShareProof] = useState<ShareProof | null>(null);
@@ -37,15 +37,11 @@ function PostDetailPage() {
   }, []);
 
   useEffect(() => {
-    const fetchPost = async () => {
+    const loadPost = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/rss?territory=recent');
-        const data = await response.json();
-        const foundPost = data.items.find((p: PostItem) => p.id === params.id);
-        if (foundPost) {
-          setPost(foundPost);
-        }
+        const data = await fetchPostById(params.id as string);
+        setPost(data);
       } catch (err) {
         console.error('Error fetching post:', err);
       } finally {
@@ -53,7 +49,7 @@ function PostDetailPage() {
       }
     };
 
-    fetchPost();
+    loadPost();
   }, [params.id]);
 
   const handleShare = async () => {
@@ -66,7 +62,7 @@ function PostDetailPage() {
         await connectWallet();
       }
 
-      const message = `${post.title}\n${post.url}\n${new Date().toISOString()}`;
+      const message = `${post.title}\n${post.url ?? ''}\n${new Date().toISOString()}`;
       const signature = await signMessage(message);
 
       setShareProof({ message, signature });
@@ -79,9 +75,9 @@ function PostDetailPage() {
   };
 
   const handleOpenInSN = () => {
-    if (post) {
-      openUrl(post.url);
-    }
+    if (!post) return;
+    const targetUrl = post.url ?? `https://stacker.news/items/${post.id}`;
+    openUrl(targetUrl);
   };
 
   const handleTip = async () => {
@@ -160,19 +156,26 @@ function PostDetailPage() {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-3">{post.title}</h2>
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                <span className="font-medium text-blue-600">
-                  {post.points} {t.points}
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 uppercase tracking-wide">
+                  {post.territoryName ?? post.territoryId}
                 </span>
-                <span>
-                  {t.by} {post.by}
+                {typeof post.score === 'number' && (
+                  <span className="font-medium text-blue-600">
+                    {post.score} {t.points}
+                  </span>
+                )}
+                {post.author?.username && (
+                  <span>
+                    {t.by} {post.author.displayName ?? post.author.username}
+                  </span>
+                )}
+                <span className="text-gray-400">
+                  {new Date(post.createdAt).toLocaleString(locale)}
                 </span>
-                <span className="text-gray-400">{post.timeAgo}</span>
               </div>
             </div>
 
-            {post.description && (
-              <p className="text-gray-700 leading-relaxed">{post.description}</p>
-            )}
+            {post.body && <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{post.body}</p>}
 
             <div className="grid grid-cols-1 gap-3">
               <button

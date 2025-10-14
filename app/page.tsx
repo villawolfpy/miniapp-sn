@@ -1,54 +1,94 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { PostItem } from '@/lib/rss';
+import { useCallback, useEffect, useState } from 'react';
 import { getBrowserLocale, type Locale, useI18n } from '@/lib/i18n';
 import { useMiniApp } from '@/lib/miniapp';
 import { TerritorySelector } from '@/components/TerritorySelector';
 import { PostList } from '@/components/PostList';
 import { MiniAppProvider } from '@/components/MiniAppProvider';
 import { truncateAddress, truncateHex } from '@/lib/utils';
+import {
+  fetchPosts,
+  fetchTerritories,
+  type PostsResponse,
+  type SnPost,
+  type Territory,
+} from '@/lib/sn';
 
 type NoticeState = { type: 'success' | 'error'; message: string } | null;
 
 function HomePage() {
-  const [territory, setTerritory] = useState('bitcoin');
-  const [posts, setPosts] = useState<PostItem[]>([]);
+  const [territory, setTerritory] = useState<string>('');
+  const [territories, setTerritories] = useState<Territory[]>([]);
+  const [posts, setPosts] = useState<SnPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locale, setLocale] = useState<Locale>('en');
   const [notice, setNotice] = useState<NoticeState>(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { connectWallet, context, lastError, clearError } = useMiniApp();
   const t = useI18n(locale);
+
+  // Derives the currently active territory, defaulting to "recent" while the API response loads.
+  const selectedTerritory = territory || territories[0]?.id || 'recent';
 
   useEffect(() => {
     setLocale(getBrowserLocale());
   }, []);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      setError(null);
+  // Pulls the list of territories from the SN API so the selector can be rendered.
+  const loadTerritories = useCallback(async () => {
+    try {
+      const data = await fetchTerritories();
+      setTerritories(data);
+      if (!territory && data.length > 0) {
+        setTerritory(data[0].id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load territories');
+    }
+  }, []);
+
+  // Fetches posts from the SN API, supporting reset and cursor-based pagination.
+  const loadPosts = useCallback(
+    async (options: { reset?: boolean } = {}) => {
+      const { reset = false } = options;
+      if (reset) {
+        setLoading(true);
+        setError(null);
+        setNextCursor(null);
+      } else {
+        setIsLoadingMore(true);
+      }
 
       try {
-        const response = await fetch(`/api/rss?territory=${territory}`);
-        const data = await response.json();
+        const response: PostsResponse = await fetchPosts({
+          territoryId: selectedTerritory,
+          cursor: reset ? undefined : nextCursor ?? undefined,
+        });
 
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setPosts(data.items);
-        }
+        setPosts((prev) => (reset ? response.posts : [...prev, ...response.posts]));
+        setNextCursor(response.nextCursor ?? null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setError(err instanceof Error ? err.message : 'Unable to load posts');
       } finally {
         setLoading(false);
+        setIsLoadingMore(false);
       }
-    };
+    },
+    [nextCursor, selectedTerritory]
+  );
 
-    fetchPosts();
-  }, [territory]);
+  useEffect(() => {
+    loadTerritories();
+  }, [loadTerritories]);
+
+  useEffect(() => {
+    if (!selectedTerritory) return;
+    loadPosts({ reset: true });
+  }, [loadPosts, selectedTerritory]);
 
   useEffect(() => {
     if (lastError) {
@@ -142,7 +182,12 @@ function HomePage() {
           </div>
         )}
 
-        <TerritorySelector selected={territory} onChange={setTerritory} locale={locale} />
+        <TerritorySelector
+          territories={territories}
+          selected={selectedTerritory}
+          onChange={setTerritory}
+          locale={locale}
+        />
 
         {loading && (
           <div className="text-center py-12 text-gray-500">{t.loading}</div>
@@ -152,7 +197,7 @@ function HomePage() {
           <div className="text-center py-12">
             <p className="text-red-600 mb-4">{t.error}</p>
             <button
-              onClick={() => setTerritory(territory)}
+              onClick={() => loadPosts({ reset: true })}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               {t.retry}
@@ -160,7 +205,14 @@ function HomePage() {
           </div>
         )}
 
-        {!loading && !error && <PostList posts={posts} locale={locale} />}
+        {!loading && !error && (
+          <PostList
+            posts={posts}
+            locale={locale}
+            onLoadMore={nextCursor ? () => loadPosts() : undefined}
+            isLoadingMore={isLoadingMore}
+          />
+        )}
       </main>
     </div>
   );
