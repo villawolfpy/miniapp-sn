@@ -1,46 +1,47 @@
-# SN Reader — Farcaster Mini App
+# SN Reader — Base Mini App
 
-A Farcaster Mini App for reading Stacker News posts directly within your Farcaster client.
+A Base Mini App for reading Stacker News posts inside any MiniKit-compatible host. The experience is optimised for the Base Mini Apps platform with wallet verification, tipping flows, and lightweight UI primitives tailored for embedded mobile experiences.
 
 ## Features
 
 - Browse Stacker News by territory (Bitcoin, Tech, Nostr, Meta, Recent)
-- View post details with sharing capabilities
-- Native integration with Farcaster via Mini Apps SDK
-- Bilingual support (English/Spanish)
-- Optimized for mobile (424×695 viewport)
-- Edge-optimized API with caching
+- View post details with wallet-backed share proofs
+- Request wallet signatures and validate them via MiniKit before processing actions
+- Send optional Base tips (0.0001 ETH) through the connected wallet using MiniKit
+- Bilingual interface (English/Spanish) with responsive layout for 424×695 viewports
+- Edge-friendly API endpoint with caching for RSS parsing
 
 ## Tech Stack
 
 - **Next.js 14** (App Router)
 - **TypeScript**
 - **Tailwind CSS**
+- **MiniKit SDK** for Base Mini Apps (lifecycle + wallet integrations)
 - **Edge Runtime** for API routes
-- **Farcaster Mini Apps SDK** (postMessage-based)
 
 ## Project Structure
 
 ```
+/base-mini-app.json          # Base Mini App manifest
 /app
   /api/rss/route.ts          # Edge API for RSS fetching
-  /post/[id]/page.tsx         # Post detail view
-  /page.tsx                   # Home with territory selector
-  /layout.tsx                 # Meta tags & layout
+  /post/[id]/page.tsx        # Post detail view with signing & tipping helpers
+  /page.tsx                  # Home with territory selector & wallet status
+  /layout.tsx                # Meta tags & layout
 /components
-  /PostList.tsx               # Post list component
-  /TerritorySelector.tsx      # Territory picker
-  /MiniAppProvider.tsx        # Mini App SDK wrapper
+  /PostList.tsx              # Post list component
+  /TerritorySelector.tsx     # Territory picker
+  /MiniAppProvider.tsx       # MiniKit orchestration & context provider
 /lib
-  /miniapp.ts                 # SDK hooks (ready, signin, composeCast, etc.)
-  /i18n.ts                    # Bilingual strings
-  /rss.ts                     # RSS fetching & parsing
+  /miniapp.ts                # Shared MiniKit types & context hook
+  /i18n.ts                   # Bilingual strings
+  /rss.ts                    # RSS fetching & parsing
+  /utils.ts                  # UI helpers
 /public
-  /icon.svg                   # 192×192 app icon
-  /splash.svg                 # 424×695 splash screen
-  /og.svg                     # 1200×630 OG image
-  /.well-known/farcaster.json # Mini App manifest
-  /robots.txt
+  /icon.svg                  # 192×192 app icon
+  /splash.svg                # 424×695 splash screen
+  /og.svg                    # 1200×630 OG image
+  /.well-known/farcaster.json# Legacy Farcaster manifest (optional)
 ```
 
 ## Development
@@ -53,41 +54,29 @@ npm install
 
 ### Local Development
 
-Since Mini Apps require an iframe context, you'll need to expose your local dev server:
+Mini Apps run within an iframe context. Expose your local dev server before testing in a host.
 
 #### Option 1: Cloudflared Tunnel
 
 ```bash
-# Install cloudflared
-brew install cloudflared  # macOS
-# or download from https://github.com/cloudflare/cloudflared/releases
-
-# Start Next.js dev server
 npm run dev
-
-# In another terminal, create tunnel
 cloudflared tunnel --url http://localhost:3000
 ```
 
 #### Option 2: ngrok
 
 ```bash
-# Install ngrok
-npm install -g ngrok
-
-# Start Next.js dev server
 npm run dev
-
-# In another terminal, create tunnel
 ngrok http 3000
 ```
 
 ### Update URLs
 
-Before deploying or testing, update these files with your actual domain:
+Before deploying or testing, replace placeholder domains with your own:
 
-1. **app/layout.tsx**: Update `fc:miniapp`, `fc:frame:button:1:target`, and `fc:frame:image` URLs
-2. **public/.well-known/farcaster.json**: Update all URLs (iconUrl, homeUrl, splash.imageUrl, appUrl)
+1. **base-mini-app.json**: `appUrl`, `iconUrl`, and `splash.imageUrl`
+2. **app/layout.tsx**: Social preview URLs (OG image)
+3. **public/.well-known/farcaster.json** (optional legacy support)
 
 ### Type Checking
 
@@ -103,180 +92,51 @@ npm run build
 
 ## Deployment
 
-### Deploy to Vercel
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel
-
-# Production deployment
-vercel --prod
-```
-
-After deployment, update all URLs in the files mentioned above with your production domain.
+Deploy to any static-friendly platform (Vercel recommended). After deployment, update the URLs mentioned above to point to your production domain.
 
 ## Verification Checklist
 
-Run these commands after deploying to verify your Mini App configuration:
+1. **Manifest** – ensure it is served correctly
+   ```bash
+   curl -s https://your-domain.com/base-mini-app.json | jq
+   ```
+   Confirm permissions include `wallet.requestAccounts`, `wallet.signMessage`, `wallet.verifyMessage`, and `base.sendTransaction`.
 
-### 1. Check Meta Tags
+2. **Assets** – make sure Base hosts can fetch required assets
+   ```bash
+   curl -I https://your-domain.com/icon.svg
+   curl -I https://your-domain.com/splash.svg
+   curl -I https://your-domain.com/og.svg
+   ```
 
-```bash
-curl -sS https://your-domain.com/ | grep -i 'fc:miniapp\|fc:frame'
-```
+3. **API Endpoint** – confirm RSS data is reachable
+   ```bash
+   curl -s https://your-domain.com/api/rss?territory=bitcoin | jq '.items | length'
+   ```
 
-**Expected output:**
-- Should find `fc:miniapp` meta tag with your domain
-- Should find `fc:frame` meta tag with value `vNext`
-- Should find `fc:frame:button:1` and related frame tags
+4. **MiniKit Behaviour** – inside a compatible host
+   - `ready()` hides the splash screen after the app mounts
+   - `connectWallet()` requests accounts, signs a challenge, and validates the signature via MiniKit
+   - `signMessage()` re-validates signatures before exposing them to the UI
+   - `sendTransaction()` submits a Base transaction (tip button) and surfaces the hash to the user
 
-### 2. Check Manifest
+## MiniKit Helpers
 
-```bash
-curl -I https://your-domain.com/.well-known/farcaster.json
-```
+The provider exposes these helpers through `useMiniApp()`:
 
-**Expected output:**
-```
-HTTP/2 200
-content-type: application/json
-access-control-allow-origin: *
-```
-
-```bash
-curl -s https://your-domain.com/.well-known/farcaster.json | jq
-```
-
-**Expected output:**
-```json
-{
-  "name": "SN Reader",
-  "iconUrl": "https://your-domain.com/icon.svg",
-  "homeUrl": "https://your-domain.com",
-  "splash": {
-    "imageUrl": "https://your-domain.com/splash.svg",
-    "backgroundColor": "#1e40af"
-  },
-  "appUrl": "https://your-domain.com",
-  "author": {
-    "name": "SN Reader Team",
-    "url": "https://your-domain.com"
-  }
-}
-```
-
-### 3. Check Assets
-
-```bash
-curl -I https://your-domain.com/icon.svg
-curl -I https://your-domain.com/splash.svg
-curl -I https://your-domain.com/og.svg
-```
-
-**Expected output for all:** `HTTP/2 200`
-
-### 4. Check API Endpoint
-
-```bash
-curl -s https://your-domain.com/api/rss?territory=bitcoin | jq '.items | length'
-```
-
-**Expected output:** Number of posts (e.g., `20`)
-
-### 5. Test in Farcaster
-
-1. Share your domain URL in a cast
-2. The cast should display:
-   - 3:2 aspect ratio image (OG image)
-   - "Open Mini App" button
-3. Click the button to open the Mini App in a modal
-4. The app should:
-   - Hide the splash screen after `ready()` is called
-   - Display the territory selector and post list
-   - Allow navigation to post details
-5. Test `Sign In` button (if host supports it)
-6. Test `Share` button in post detail (should call `composeCast()`)
-
-### 6. Check Headers
-
-```bash
-curl -I https://your-domain.com/api/rss?territory=bitcoin
-```
-
-**Expected output:** Should include `Cache-Control` header
-
-## Mini App SDK Functions
-
-The app uses these Mini App SDK functions via `useMiniApp()` hook:
-
-- **ready()**: Called on mount to hide splash screen
-- **signin()**: Requests user authentication (if supported by host)
-- **composeCast(text)**: Opens cast composer with pre-filled text
-- **openUrl(url)**: Opens external URL
-- **close()**: Closes the Mini App modal
-- **viewProfile(fid)**: Opens user profile
-
-## Configuration
-
-### Environment Variables
-
-No environment variables are required. The app uses public Stacker News RSS feeds.
-
-### Territories
-
-Available territories are configured in `components/TerritorySelector.tsx`:
-
-- bitcoin
-- tech
-- nostr
-- meta
-- recent (all posts)
-
-Add more by editing the `TERRITORIES` array.
-
-### i18n
-
-Translations are in `lib/i18n.ts`. Currently supports:
-
-- English (en)
-- Spanish (es)
-
-Add more languages by extending the `translations` object.
+- `ready()` – notify the host that rendering is complete
+- `connectWallet()` – request wallet connection + signature verification
+- `signMessage(message)` – sign arbitrary content and ensure the host validates it
+- `openUrl(url)` – open external content via the host
+- `close()` – close the Mini App view
+- `sendTransaction(tx)` – forward Base transactions through the host wallet
+- `clearError()` – reset error state shown in the UI
 
 ## Troubleshooting
 
-### Meta tags not showing
-
-- Ensure you're checking the actual HTML source, not browser dev tools (Next.js may hydrate differently)
-- Check that `app/layout.tsx` has the correct `metadata` export
-
-### Manifest 404
-
-- Ensure `public/.well-known/farcaster.json` exists
-- Check `next.config.js` headers configuration
-- Verify `vercel.json` rewrites
-
-### Mini App SDK not working
-
-- The app must be loaded in an iframe context (Farcaster client)
-- Check browser console for postMessage errors
-- Ensure `MiniAppProvider` wraps your components
-
-### RSS API errors
-
-- Check network tab for API response
-- Verify Stacker News RSS feeds are accessible
-- Check `lib/rss.ts` parsing logic
-
-## References
-
-- [Farcaster Mini Apps Specification](https://miniapps.farcaster.xyz/docs/specification)
-- [Farcaster Frames Documentation](https://docs.farcaster.xyz/reference/frames-redirect)
-- [Stacker News](https://stacker.news)
-- [GitHub Repository](https://github.com/villawolfpy/sn1) (reference implementation)
+- **MiniKit not detected**: Make sure you are loading the app inside a MiniKit-compatible host. The standalone page will show a fallback message.
+- **Signature verification errors**: Hosts must support `wallet.verifyMessage`. Replace the placeholder tip address/value if you plan to use a different payout target.
+- **Transaction rejections**: Ensure the connected wallet has Base ETH to cover the 0.0001 ETH tip and gas costs.
 
 ## License
 

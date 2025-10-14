@@ -1,120 +1,91 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { createContext, useContext } from 'react';
 
-interface MiniAppContext {
-  user?: {
-    fid: number;
-    username?: string;
-    displayName?: string;
-    pfpUrl?: string;
-  };
+/**
+ * Hexadecimal string helper type (0x-prefixed) used for addresses, signatures, and transaction values.
+ */
+export type Hex = `0x${string}`;
+
+/**
+ * EVM address helper type constrained to a 0x-prefixed string.
+ */
+export type Address = `0x${string}`;
+
+/**
+ * Base transaction payload supported by MiniKit when relaying requests to the connected wallet.
+ */
+export interface BaseTransactionRequest {
+  to: Address;
+  value?: Hex;
+  data?: Hex;
+  gas?: Hex;
 }
 
-interface MiniAppSDK {
+/**
+ * Session data returned after the Mini App is initialized or a wallet connection is established.
+ */
+export interface MiniAppSession {
+  address?: Address;
+  displayName?: string;
+  username?: string;
+  avatarUrl?: string;
+  chainId?: number;
+  sessionMessage?: string;
+  sessionSignature?: Hex;
+}
+
+/**
+ * Shape of the object exposed through context to client components.
+ */
+export interface MiniAppSDK {
   isReady: boolean;
-  context: MiniAppContext | null;
   isSupported: boolean;
+  context: MiniAppSession | null;
+  lastMessage: unknown;
+  lastError: string | null;
+  /**
+   * Marks the Mini App as ready so the host can hide the splash screen.
+   */
   ready: () => void;
-  signin: () => Promise<void>;
-  composeCast: (text: string) => Promise<void>;
-  close: () => void;
+  /**
+   * Requests a wallet connection and returns the hydrated session data.
+   */
+  connectWallet: () => Promise<MiniAppSession>;
+  /**
+   * Asks the connected wallet to sign a message and validates the signature before returning it.
+   */
+  signMessage: (message: string) => Promise<Hex>;
+  /**
+   * Triggers the host to open an external URL.
+   */
   openUrl: (url: string) => void;
-  viewProfile: (fid: number) => void;
+  /**
+   * Requests the host to close the Mini App view.
+   */
+  close: () => void;
+  /**
+   * Sends a transaction through the connected wallet on Base.
+   */
+  sendTransaction: (tx: BaseTransactionRequest) => Promise<string>;
+  /**
+   * Clears the last captured error.
+   */
+  clearError: () => void;
 }
 
+/**
+ * React context carrying the MiniKit SDK helpers so any component can interact with the host.
+ */
+export const MiniAppContext = createContext<MiniAppSDK | null>(null);
+
+/**
+ * Hook that surfaces the MiniKit helpers. Must be used under a MiniAppProvider.
+ */
 export function useMiniApp(): MiniAppSDK {
-  const [isReady, setIsReady] = useState(false);
-  const [context, setContext] = useState<MiniAppContext | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
-
-  useEffect(() => {
-    const checkSupport = () => {
-      if (typeof window !== 'undefined') {
-        const inIframe = window.self !== window.top;
-        setIsSupported(inIframe);
-      }
-    };
-
-    checkSupport();
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'miniapp:context') {
-        setContext(event.data.context);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, []);
-
-  const ready = useCallback(() => {
-    if (typeof window !== 'undefined' && window.parent) {
-      window.parent.postMessage({ type: 'miniapp:ready' }, '*');
-      setIsReady(true);
-    }
-  }, []);
-
-  const signin = useCallback(async () => {
-    if (typeof window !== 'undefined' && window.parent) {
-      window.parent.postMessage({ type: 'miniapp:signin' }, '*');
-    }
-  }, []);
-
-  const composeCast = useCallback(async (text: string) => {
-    if (typeof window !== 'undefined' && window.parent) {
-      window.parent.postMessage(
-        {
-          type: 'miniapp:composeCast',
-          data: { text },
-        },
-        '*'
-      );
-    }
-  }, []);
-
-  const close = useCallback(() => {
-    if (typeof window !== 'undefined' && window.parent) {
-      window.parent.postMessage({ type: 'miniapp:close' }, '*');
-    }
-  }, []);
-
-  const openUrl = useCallback((url: string) => {
-    if (typeof window !== 'undefined' && window.parent) {
-      window.parent.postMessage(
-        {
-          type: 'miniapp:openUrl',
-          data: { url },
-        },
-        '*'
-      );
-    }
-  }, []);
-
-  const viewProfile = useCallback((fid: number) => {
-    if (typeof window !== 'undefined' && window.parent) {
-      window.parent.postMessage(
-        {
-          type: 'miniapp:viewProfile',
-          data: { fid },
-        },
-        '*'
-      );
-    }
-  }, []);
-
-  return {
-    isReady,
-    context,
-    isSupported,
-    ready,
-    signin,
-    composeCast,
-    close,
-    openUrl,
-    viewProfile,
-  };
+  const context = useContext(MiniAppContext);
+  if (!context) {
+    throw new Error('useMiniApp must be used within a MiniAppProvider');
+  }
+  return context;
 }

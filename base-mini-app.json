@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "id": "sn-reader-base",
+  "name": "SN Reader",
+  "version": "1.0.0",
+  "description": "Browse Stacker News posts and verify wallet actions inside Base Mini Apps.",
+  "developer": {
+    "name": "SN Reader Team",
+    "url": "https://stacker.news"
+  },
+  "appUrl": "https://your-domain.com",
+  "iconUrl": "https://your-domain.com/icon.svg",
+  "splash": {
+    "imageUrl": "https://your-domain.com/splash.svg",
+    "backgroundColor": "#0f172a"
+  },
+  "networks": [
+    {
+      "chainId": 8453,
+      "name": "Base"
+    }
+  ],
+  "permissions": {
+    "wallet": ["requestAccounts", "signMessage", "verifyMessage"],
+    "base": ["sendTransaction"],
+    "navigation": ["openUrl"],
+    "lifecycle": ["onInitialize", "onMessage", "onClose"]
+  }
+}
