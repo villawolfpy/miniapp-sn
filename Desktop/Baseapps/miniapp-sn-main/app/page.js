@@ -1,99 +1,166 @@
+'use client';
+import { useState, useEffect } from 'react';
+
 export default function Home() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('trending');
+
+  useEffect(() => {
+    fetchPosts(activeTab);
+  }, [activeTab]);
+
+  const fetchPosts = async (type) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/posts?type=${type}`);
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error('Error:', error);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        padding: '40px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-        maxWidth: '500px',
-        width: '100%',
-        textAlign: 'center'
-      }}>
-        <h1 style={{ color: '#333', marginBottom: '10px' }}>📰 Stacker.News</h1>
-        <p style={{ color: '#666', marginBottom: '30px' }}>
-          Mini App for Farcaster - Explore trending posts
-        </p>
-
-        <div style={{
-          background: '#f8f9fa',
-          padding: '20px',
-          borderRadius: '10px',
-          marginBottom: '20px'
-        }}>
-          <h3 style={{ color: '#333', marginBottom: '15px' }}>Frame Actions:</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button style={{
-              padding: '12px',
-              background: '#0070f3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }} onClick={() => window.open('/api/frame', '_blank')}>
-              📊 Open Frame
-            </button>
-          </div>
-        </div>
-
-        <div id="posts" style={{ textAlign: 'left' }}>
-          <p>Loading posts...</p>
-        </div>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>📰 Stacker.News</h1>
+        <p style={styles.subtitle}>Bitcoin & Nostr Community</p>
       </div>
 
-      {/* Meta tags para el Frame */}
-      <head>
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content={`${process.env.NEXT_PUBLIC_URL || 'https://sn-app-eta.vercel.app'}/api/og`} />
-        <meta property="fc:frame:post_url" content={`${process.env.NEXT_PUBLIC_URL || 'https://sn-app-eta.vercel.app'}/api/frame`} />
-        <meta property="fc:frame:button:1" content="📊 Trending Posts" />
-        <meta property="fc:frame:button:2" content="🆕 Latest Posts" />
-        <meta property="fc:frame:button:3" content="🔄 Refresh" />
-      </head>
+      <div style={styles.tabs}>
+        <button
+          style={{
+            ...styles.tabButton,
+            ...(activeTab === 'trending' ? styles.activeTab : {})
+          }}
+          onClick={() => setActiveTab('trending')}
+        >
+          📊 Trending
+        </button>
+        <button
+          style={{
+            ...styles.tabButton,
+            ...(activeTab === 'latest' ? styles.activeTab : {})
+          }}
+          onClick={() => setActiveTab('latest')}
+        >
+          🆕 Latest
+        </button>
+      </div>
 
-      <script dangerouslySetInnerHTML={{
-        __html: `
-          async function loadPosts() {
-            try {
-              const response = await fetch('/api/posts');
-              const posts = await response.json();
-              const postsDiv = document.getElementById('posts');
-
-              if (posts.length === 0) {
-                postsDiv.innerHTML = '<p>No posts found</p>';
-                return;
-              }
-
-              postsDiv.innerHTML = posts.slice(0, 3).map(post => \`
-                <div style="
-                  background: white;
-                  border: 1px solid #e0e0e0;
-                  border-radius: 8px;
-                  padding: 15px;
-                  margin: 10px 0;
-                ">
-                  <strong>\${post.title || 'Untitled'}</strong>
-                  <div style="color: #666; font-size: 14px; margin-top: 5px;">
-                    ⬆️ \${post.upvotes || 0} • 💬 \${post.comments || 0}
-                  </div>
-                </div>
-              \`).join('');
-            } catch (error) {
-              console.error('Error:', error);
-              document.getElementById('posts').innerHTML = '<p>Error loading posts</p>';
-            }
-          }
-
-          loadPosts();
-        `
-      }} />
+      <div style={styles.postsContainer}>
+        {loading ? (
+          <div style={styles.loading}>Loading posts...</div>
+        ) : posts.length > 0 ? (
+          posts.map((post) => (
+            <div key={post.id} style={styles.postCard}>
+              <h3 style={styles.postTitle}>{post.title}</h3>
+              <div style={styles.postMeta}>
+                <span>⬆️ {post.upvotes}</span>
+                <span>💬 {post.comments}</span>
+                {post.user && <span>👤 {post.user}</span>}
+              </div>
+              <a
+                href={`https://stacker.news/items/${post.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.readMore}
+              >
+                Read on Stacker.News →
+              </a>
+            </div>
+          ))
+        ) : (
+          <div style={styles.noPosts}>No posts found</div>
+        )}
+      </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '24px'
+  },
+  title: {
+    color: 'white',
+    fontSize: '28px',
+    margin: '0 0 8px 0'
+  },
+  subtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    margin: 0,
+    fontSize: '14px'
+  },
+  tabs: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '24px',
+    justifyContent: 'center'
+  },
+  tabButton: {
+    padding: '12px 20px',
+    border: 'none',
+    borderRadius: '8px',
+    background: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    cursor: 'pointer',
+    fontSize: '14px',
+    backdropFilter: 'blur(10px)'
+  },
+  activeTab: {
+    background: 'rgba(255,255,255,0.3)',
+    fontWeight: '600'
+  },
+  postsContainer: {
+    maxWidth: '600px',
+    margin: '0 auto'
+  },
+  postCard: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '16px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+  },
+  postTitle: {
+    margin: '0 0 12px 0',
+    fontSize: '16px',
+    lineHeight: '1.4',
+    color: '#333'
+  },
+  postMeta: {
+    display: 'flex',
+    gap: '16px',
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '12px'
+  },
+  readMore: {
+    color: '#0070f3',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+  loading: {
+    textAlign: 'center',
+    color: 'white',
+    padding: '40px'
+  },
+  noPosts: {
+    textAlign: 'center',
+    color: 'white',
+    padding: '40px'
+  }
+};

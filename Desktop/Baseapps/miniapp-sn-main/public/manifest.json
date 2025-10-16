@@ -1,0 +1,6 @@
+{
+  "name": "Stacker.News Reader",
+  "description": "Browse Stacker.News posts in Farcaster",
+  "icon": "https://sn-app-eta.vercel.app/icon.png",
+  "permissions": []
+}
