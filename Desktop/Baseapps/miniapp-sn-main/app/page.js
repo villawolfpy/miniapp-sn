@@ -1,166 +1,151 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { TERRITORIES } from '@/lib/territories';
 
-export default function Home() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('trending');
+export default function HomePage() {
+  return (
+    <main style={styles.container}>
+      <h1 style={styles.title}>Stacker News Territories</h1>
+      <TerritoryList />
+    </main>
+  );
+}
+
+function TerritoryList() {
+  const [territory, setTerritory] = useState('recent');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchPosts(activeTab);
-  }, [activeTab]);
-
-  const fetchPosts = async (type) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/posts?type=${type}`);
-      const data = await response.json();
-      setPosts(data);
-    } catch (error) {
-      console.error('Error:', error);
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    let ignore = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/rss?territory=${territory}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (ignore) return;
+        if (data?.error) setError(data.error);
+        setItems(Array.isArray(data?.items) ? data.items : []);
+      })
+      .catch((e) => setError(e?.message ?? 'fetch failed'))
+      .finally(() => setLoading(false));
+    return () => {
+      ignore = true;
+    };
+  }, [territory]);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>📰 Stacker.News</h1>
-        <p style={styles.subtitle}>Bitcoin & Nostr Community</p>
+    <section style={styles.section}>
+      <div style={styles.buttonContainer}>
+        {TERRITORIES.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTerritory(t.key)}
+            style={{
+              ...styles.button,
+              ...(territory === t.key ? styles.activeButton : {})
+            }}
+            aria-pressed={territory === t.key}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div style={styles.tabs}>
-        <button
-          style={{
-            ...styles.tabButton,
-            ...(activeTab === 'trending' ? styles.activeTab : {})
-          }}
-          onClick={() => setActiveTab('trending')}
-        >
-          📊 Trending
-        </button>
-        <button
-          style={{
-            ...styles.tabButton,
-            ...(activeTab === 'latest' ? styles.activeTab : {})
-          }}
-          onClick={() => setActiveTab('latest')}
-        >
-          🆕 Latest
-        </button>
-      </div>
+      {loading && <p style={styles.loading}>Loading posts…</p>}
+      {error && <p style={styles.error}>No pudimos leer el RSS: {error}</p>}
+      {!loading && !error && items.length === 0 && <p style={styles.noPosts}>No posts found.</p>}
 
-      <div style={styles.postsContainer}>
-        {loading ? (
-          <div style={styles.loading}>Loading posts...</div>
-        ) : posts.length > 0 ? (
-          posts.map((post) => (
-            <div key={post.id} style={styles.postCard}>
-              <h3 style={styles.postTitle}>{post.title}</h3>
-              <div style={styles.postMeta}>
-                <span>⬆️ {post.upvotes}</span>
-                <span>💬 {post.comments}</span>
-                {post.user && <span>👤 {post.user}</span>}
-              </div>
-              <a
-                href={`https://stacker.news/items/${post.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.readMore}
-              >
-                Read on Stacker.News →
-              </a>
-            </div>
-          ))
-        ) : (
-          <div style={styles.noPosts}>No posts found</div>
-        )}
-      </div>
-    </div>
+      <ul style={styles.list}>
+        {items.map((it) => (
+          <li key={it.id} style={styles.listItem}>
+            <a href={it.link} target="_blank" rel="noreferrer" style={styles.link}>
+              {it.title}
+            </a>
+            <div style={styles.date}>{it.pubDate}</div>
+            {it.description && (
+              <p style={styles.description} dangerouslySetInnerHTML={{ __html: it.description }} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
 const styles = {
   container: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '16px',
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '20px',
     fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
   },
-  header: {
-    textAlign: 'center',
-    marginBottom: '24px'
-  },
   title: {
-    color: 'white',
+    textAlign: 'center',
     fontSize: '28px',
-    margin: '0 0 8px 0'
+    marginBottom: '20px'
   },
-  subtitle: {
-    color: 'rgba(255,255,255,0.8)',
-    margin: 0,
-    fontSize: '14px'
-  },
-  tabs: {
+  section: {
     display: 'flex',
-    gap: '8px',
-    marginBottom: '24px',
+    flexDirection: 'column',
+    gap: '20px'
+  },
+  buttonContainer: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
     justifyContent: 'center'
   },
-  tabButton: {
-    padding: '12px 20px',
-    border: 'none',
-    borderRadius: '8px',
-    background: 'rgba(255,255,255,0.2)',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    backdropFilter: 'blur(10px)'
-  },
-  activeTab: {
-    background: 'rgba(255,255,255,0.3)',
-    fontWeight: '600'
-  },
-  postsContainer: {
-    maxWidth: '600px',
-    margin: '0 auto'
-  },
-  postCard: {
+  button: {
+    padding: '8px 16px',
+    border: '1px solid #ccc',
+    borderRadius: '20px',
     background: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    marginBottom: '16px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+    cursor: 'pointer',
+    fontSize: '14px'
   },
-  postTitle: {
-    margin: '0 0 12px 0',
-    fontSize: '16px',
-    lineHeight: '1.4',
-    color: '#333'
-  },
-  postMeta: {
-    display: 'flex',
-    gap: '16px',
-    fontSize: '14px',
-    color: '#666',
-    marginBottom: '12px'
-  },
-  readMore: {
-    color: '#0070f3',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '500'
+  activeButton: {
+    fontWeight: 'bold'
   },
   loading: {
-    textAlign: 'center',
-    color: 'white',
-    padding: '40px'
+    textAlign: 'center'
+  },
+  error: {
+    color: 'red',
+    textAlign: 'center'
   },
   noPosts: {
-    textAlign: 'center',
-    color: 'white',
-    padding: '40px'
+    textAlign: 'center'
+  },
+  list: {
+    listStyle: 'none',
+    padding: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px'
+  },
+  listItem: {
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    padding: '15px'
+  },
+  link: {
+    fontSize: '18px',
+    fontWeight: '500',
+    textDecoration: 'underline',
+    color: 'blue',
+    display: 'block',
+    marginBottom: '5px'
+  },
+  date: {
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '10px'
+  },
+  description: {
+    fontSize: '14px',
+    lineHeight: '1.4',
+    margin: 0
   }
 };

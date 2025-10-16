@@ -1,0 +1,187 @@
+*** Begin Patch
+*** Add File: app/api/rss/route.ts
++export const runtime = 'edge';
++
++const TERRITORY_TO_RSS: Record<string, string> = {
++  recent: 'https://stacker.news/rss',
++  bitcoin: 'https://stacker.news/~bitcoin/rss',
++  tech: 'https://stacker.news/~tech/rss',
++  nostr: 'https://stacker.news/~nostr/rss',
++  meta: 'https://stacker.news/~meta/rss',
++};
++
++function parseRss(xml: string) {
++  const doc = new DOMParser().parseFromString(xml, 'text/xml');
++  const items = Array.from(doc.querySelectorAll('item')).map((el) => ({
++    id: el.querySelector('guid')?.textContent ?? el.querySelector('link')?.textContent ?? '',
++    title: el.querySelector('title')?.textContent ?? '',
++    link: el.querySelector('link')?.textContent ?? '',
++    pubDate: el.querySelector('pubDate')?.textContent ?? '',
++    description: el.querySelector('description')?.textContent ?? '',
++  }));
++  return { items };
++}
++
++export async function GET(req: Request) {
++  try {
++    const url = new URL(req.url);
++    const territory = (url.searchParams.get('territory') || 'recent').toLowerCase();
++    const feed = TERRITORY_TO_RSS[territory] ?? TERRITORY_TO_RSS.recent;
++
++    const res = await fetch(feed, {
++      headers: { 'User-Agent': 'SN-Reader/1.0 (+https://sn-app-eta.vercel.app/)' },
++      next: { revalidate: 60 },
++    });
++    if (!res.ok) {
++      return new Response(JSON.stringify({ items: [], error: `Upstream ${res.status}` }), {
++        status: 502,
++        headers: {
++          'Content-Type': 'application/json',
++          'Cache-Control': 'no-store',
++          'Access-Control-Allow-Origin': '*',
++        },
++      });
++    }
++    const xml = await res.text();
++    const data = parseRss(xml);
++
++    return new Response(JSON.stringify(data), {
++      status: 200,
++      headers: {
++        'Content-Type': 'application/json',
++        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
++        'Access-Control-Allow-Origin': '*',
++      },
++    });
++  } catch (e: any) {
++    return new Response(JSON.stringify({ items: [], error: e?.message || 'Unknown error' }), {
++      status: 500,
++      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
++    });
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: lib/territories.ts
++export const TERRITORIES = [
++  { key: 'recent', label: 'Recent (All)' },
++  { key: 'bitcoin', label: 'Bitcoin' },
++  { key: 'tech', label: 'Tech' },
++  { key: 'nostr', label: 'Nostr' },
++  { key: 'meta', label: 'Meta' },
++];
++
+*** End Patch
+*** Begin Patch
+*** Update File: app/page.tsx
+@@
+-import React from 'react';
++import React from 'react';
++import { TERRITORIES } from '@/lib/territories';
+ 
+ export default function HomePage() {
+-  return (
+-    <main className="max-w-2xl mx-auto p-4">
+-      <h1 className="text-2xl font-bold mb-4">Stacker News Territories</h1>
+-      {/* Tu listado actual */}
+-    </main>
+-  );
++  return (
++    <main className="max-w-2xl mx-auto p-4">
++      <h1 className="text-2xl font-bold mb-4">Stacker News Territories</h1>
++      <TerritoryList />
++    </main>
++  );
+ }
++
++function TerritoryList() {
++  const [territory, setTerritory] = React.useState('recent');
++  const [items, setItems] = React.useState<any[]>([]);
++  const [loading, setLoading] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++
++  useEffect(() => {
++    let ignore = false;
++    setLoading(true);
++    setError(null);
++    fetch(`/api/rss?territory=${territory}`)
++      .then((r) => r.json())
++      .then((data) => {
++        if (ignore) return;
++        if (data?.error) setError(data.error);
++        setItems(Array.isArray(data?.items) ? data.items : []);
++      })
++      .catch((e) => setError(e?.message ?? 'fetch failed'))
++      .finally(() => setLoading(false));
++    return () => {
++      ignore = true;
++    };
++  }, [territory]);
++
++  return (
++    <section className="space-y-4">
++      <div className="flex gap-2 flex-wrap">
++        {TERRITORIES.map((t) => (
++          <button
++            key={t.key}
++            onClick={() => setTerritory(t.key)}
++            className={`px-3 py-1 rounded-full border ${territory === t.key ? 'font-semibold' : ''}`}
++            aria-pressed={territory === t.key}
++          >
++            {t.label}
++          </button>
++        ))}
++      </div>
++
++      {loading && <p>Loading posts…</p>}
++      {error && <p className="text-red-600">No pudimos leer el RSS: {error}</p>}
++      {!loading && !error && items.length === 0 && <p>No posts found.</p>}
++
++      <ul className="space-y-3">
++        {items.map((it) => (
++          <li key={it.id} className="border rounded-lg p-3">
++            <a href={it.link} target="_blank" rel="noreferrer" className="text-lg font-medium underline">
++              {it.title}
++            </a>
++            <div className="text-sm opacity-70">{it.pubDate}</div>
++            {it.description && (
++              <p className="text-sm mt-2 line-clamp-3" dangerouslySetInnerHTML={{ __html: it.description }} />
++            )}
++          </li>
++        ))}
++      </ul>
++    </section>
++  );
++}
+*** End Patch
+*** Begin Patch
+*** Add File: public/.well-known/farcaster.json
++{
++  "version": 1,
++  "name": "SN Territories Mini App",
++  "iconUrl": "https://sn-app-eta.vercel.app/icon.svg",
++  "homeUrl": "https://sn-app-eta.vercel.app/",
++  "app": {
++    "appUrl": "https://sn-app-eta.vercel.app/",
++    "splash": {
++      "backgroundColor": "#ffffff",
++      "imageUrl": "https://sn-app-eta.vercel.app/splash.svg"
++    }
++  }
++}
+*** End Patch
+*** Begin Patch
+*** Update File: app/layout.tsx
+@@
+ export const metadata = {
+   title: 'SN App',
+   description: 'Stacker News territories in a Farcaster Mini App',
++  other: {
++    // Señales para Farcaster Mini App / Frames vNext
++    'fc:miniapp': 'v1',
++    'fc:frame': 'vNext',
++    'of:accepts:xmtp': '2024-02-01',
++  },
+ };
+*** End Patch

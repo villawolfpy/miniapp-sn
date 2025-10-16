@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "SN Territories Mini App",
+  "iconUrl": "https://sn-app-eta.vercel.app/icon.svg",
+  "homeUrl": "https://sn-app-eta.vercel.app/",
+  "app": {
+    "appUrl": "https://sn-app-eta.vercel.app/",
+    "splash": {
+      "backgroundColor": "#ffffff",
+      "imageUrl": "https://sn-app-eta.vercel.app/splash.svg"
+    }
+  }
+}
