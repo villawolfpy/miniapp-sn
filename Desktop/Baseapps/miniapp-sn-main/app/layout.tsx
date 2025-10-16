@@ -6,34 +6,33 @@ import { OnchainKitProvider } from '@coinbase/onchainkit';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SN Reader — Mini App',
+  title: 'Stacker.News Mini App',
   description: 'Read Stacker News without leaving Farcaster.',
   openGraph: {
-    title: 'SN Reader — Mini App',
+    title: 'Stacker.News Mini App',
     description: 'Read Stacker News without leaving Farcaster.',
     images: [
       {
-        url: '/og.png',
+        url: 'https://sn-app-eta.vercel.app/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'SN Reader',
+        alt: 'Stacker.News Mini App',
       },
     ],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SN Reader — Mini App',
+    title: 'Stacker.News Mini App',
     description: 'Read Stacker News without leaving Farcaster.',
-    images: ['/og.png'],
+    images: ['https://sn-app-eta.vercel.app/og-image.png'],
   },
   other: {
-    'fc:miniapp': 'https://sn-app-eta.vercel.app',
     'fc:frame': 'vNext',
-    'og:image': 'https://sn-app-eta.vercel.app/og.png',
-    'fc:frame:image': 'https://sn-app-eta.vercel.app/og.png',
-    'fc:frame:button:1': 'Open Mini App',
-    'fc:frame:button:1:target': 'https://sn-app-eta.vercel.app',
+    'fc:frame:image': 'https://sn-app-eta.vercel.app/og-image.png',
+    'fc:frame:post_url': 'https://sn-app-eta.vercel.app/api/frame',
+    'fc:frame:button:1': '📊 Trending Posts',
+    'fc:frame:button:2': '🆕 Latest Posts',
   },
 };
 

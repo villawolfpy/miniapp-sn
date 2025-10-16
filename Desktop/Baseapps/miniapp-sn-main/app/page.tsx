@@ -1,21 +1,40 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PostItem } from '@/lib/rss';
 import { getBrowserLocale, Locale } from '@/lib/i18n';
 import { useMiniKit } from '@/lib/miniapp';
 import { TerritorySelector } from '@/components/TerritorySelector';
 import { PostList } from '@/components/PostList';
 import { MiniAppProvider } from '@/components/MiniAppProvider';
 
+interface Post {
+  id: number;
+  title: string;
+  url?: string;
+  user?: string;
+  upvotes: number;
+  comments: number;
+  createdAt: string;
+}
+
+interface PostItem {
+  id: string;
+  title: string;
+  url: string;
+  points: number;
+  by: string;
+  timeAgo: string;
+  description?: string;
+}
+
 function HomePage() {
   const [territory, setTerritory] = useState('bitcoin');
-  const [posts, setPosts] = useState<PostItem[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locale, setLocale] = useState<Locale>('en');
-  const { signin, context } = useMiniKit();
-  // Note: signin and context properties may need to be updated based on MiniKit API
+  const [type, setType] = useState<'trending' | 'latest'>('trending');
+  const { context } = useMiniKit();
 
   useEffect(() => {
     setLocale(getBrowserLocale());
@@ -27,13 +46,13 @@ function HomePage() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/rss?territory=${territory}`);
+        const response = await fetch(`/api/posts?type=${type}`);
         const data = await response.json();
 
-        if (data.error) {
-          setError(data.error);
+        if (Array.isArray(data)) {
+          setPosts(data);
         } else {
-          setPosts(data.items);
+          setError('Invalid response format');
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -43,7 +62,7 @@ function HomePage() {
     };
 
     fetchPosts();
-  }, [territory]);
+  }, [type]);
 
   const loadingText = locale === 'es' ? 'Cargando...' : 'Loading...';
   const errorText = locale === 'es' ? 'Error al cargar posts' : 'Error loading posts';
@@ -54,10 +73,10 @@ function HomePage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-900">SN Reader</h1>
+          <h1 className="text-lg font-bold text-gray-900">📰 Stacker.News Posts</h1>
           {!context?.user && (
             <button
-              onClick={signin}
+              onClick={() => {}}
               className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               {signinText}
@@ -67,11 +86,28 @@ function HomePage() {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-4">
-        <TerritorySelector
-          selected={territory}
-          onChange={setTerritory}
-          locale={locale}
-        />
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setType('trending')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              type === 'trending'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            📊 Trending
+          </button>
+          <button
+            onClick={() => setType('latest')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              type === 'latest'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            🆕 Latest
+          </button>
+        </div>
 
         {loading && (
           <div className="text-center py-12 text-gray-500">{loadingText}</div>
@@ -81,7 +117,7 @@ function HomePage() {
           <div className="text-center py-12">
             <p className="text-red-600 mb-4">{errorText}</p>
             <button
-              onClick={() => setTerritory(territory)}
+              onClick={() => setType(type)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               {retryText}
@@ -89,7 +125,15 @@ function HomePage() {
           </div>
         )}
 
-        {!loading && !error && <PostList posts={posts} locale={locale} />}
+        {!loading && !error && <PostList posts={posts.map(post => ({
+          id: post.id.toString(),
+          title: post.title,
+          url: post.url || `https://stacker.news/items/${post.id}`,
+          points: post.upvotes,
+          by: post.user || 'anonymous',
+          timeAgo: new Date(post.createdAt).toLocaleDateString(),
+          description: post.title
+        }))} locale={locale} />}
       </main>
     </div>
   );
