@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'trending';
 
   try {
-    // Stacker.news GraphQL API
+    // Stacker.news GraphQL API - query simplificada
     const query = `
       query {
         items(limit: 10, sort: ${type === 'latest' ? 'created' : 'score'}) {
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
             name
           }
           upvotes
+          sats
           comments {
             count
           }
@@ -28,23 +29,28 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'StackerNews-MiniApp/1.0'
       },
       body: JSON.stringify({ query }),
     });
 
     if (!response.ok) {
-      throw new Error('Stacker.news API failed');
+      throw new Error(`API responded with status: ${response.status}`);
     }
 
     const data = await response.json();
 
-    // Transform the data to match our needs
-    const posts = data.data.items.map((item: any) => ({
+    if (data.errors) {
+      throw new Error(data.errors[0].message);
+    }
+
+    const posts = data.data.items.map(item => ({
       id: item.id,
       title: item.title,
       url: item.url,
       user: item.user?.name,
       upvotes: item.upvotes,
+      sats: item.sats,
       comments: item.comments?.count || 0,
       createdAt: item.createdAt
     }));
@@ -53,14 +59,24 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching posts:', error);
 
-    // Fallback data in case API fails
+    // Fallback data mejorado
     const fallbackPosts = [
       {
         id: 1,
         title: 'Welcome to Stacker.News Mini App',
         user: 'admin',
         upvotes: 42,
+        sats: 1000,
         comments: 5,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: 'Explore Bitcoin and Nostr content',
+        user: 'stacker',
+        upvotes: 25,
+        sats: 500,
+        comments: 2,
         createdAt: new Date().toISOString()
       }
     ];
