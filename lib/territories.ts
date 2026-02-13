@@ -73,3 +73,9 @@ export interface Post {
   ncomments: number;
   user: { name: string };
 }
+
+export interface PostDetail extends Post {
+  url: string | null;
+  text: string | null;
+  subName: string | null;
+}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import type { Territory, Post } from '@/lib/territories';
 
 function timeAgo(dateStr: string): string {
@@ -17,11 +19,14 @@ function timeAgo(dateStr: string): string {
 }
 
 export function HomeClient() {
+  const searchParams = useSearchParams();
+  const initialSub = searchParams.get('sub') ?? '';
+
   const [subs, setSubs] = useState<Territory[]>([]);
   const [subsLoading, setSubsLoading] = useState(true);
   const [subsError, setSubsError] = useState<string | null>(null);
 
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(initialSub);
   const [posts, setPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
@@ -46,7 +51,7 @@ export function HomeClient() {
     return () => { active = false; };
   }, []);
 
-  // Load posts when territory changes
+  // Fetch posts for a territory
   const fetchPosts = useCallback((sub: string) => {
     if (!sub) {
       setPosts([]);
@@ -75,6 +80,13 @@ export function HomeClient() {
 
     return () => { active = false; };
   }, []);
+
+  // Auto-load posts if returning with ?sub=
+  useEffect(() => {
+    if (initialSub) {
+      fetchPosts(initialSub);
+    }
+  }, [initialSub, fetchPosts]);
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value;
@@ -145,15 +157,21 @@ export function HomeClient() {
           ) : (
             <div className="list">
               {posts.map((post) => (
-                <article key={post.id} className="card post-card">
-                  <h3 className="post-title">{post.title}</h3>
-                  <div className="post-meta">
-                    <span className="post-sats">{post.sats} sats</span>
-                    <span>{post.ncomments} comments</span>
-                    <span>by {post.user.name}</span>
-                    <span>{timeAgo(post.createdAt)}</span>
-                  </div>
-                </article>
+                <Link
+                  key={post.id}
+                  href={`/p/${post.id}?sub=${encodeURIComponent(selected)}`}
+                  className="post-link"
+                >
+                  <article className="card post-card">
+                    <h3 className="post-title">{post.title}</h3>
+                    <div className="post-meta">
+                      <span className="post-sats">{post.sats} sats</span>
+                      <span>{post.ncomments} comments</span>
+                      <span>by {post.user.name}</span>
+                      <span>{timeAgo(post.createdAt)}</span>
+                    </div>
+                  </article>
+                </Link>
               ))}
             </div>
           )}
