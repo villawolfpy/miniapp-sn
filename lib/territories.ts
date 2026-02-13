@@ -64,3 +64,12 @@ export interface Territory {
   status: string;
   nsfw: boolean;
 }
+
+export interface Post {
+  id: string;
+  title: string;
+  sats: number;
+  createdAt: string;
+  ncomments: number;
+  user: { name: string };
+}
