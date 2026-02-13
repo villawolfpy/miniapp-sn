@@ -6,8 +6,8 @@ import { buildMiniappMetadata } from '@/lib/miniapp';
 const miniappMeta = buildMiniappMetadata('/');
 
 export const metadata: Metadata = {
-  title: 'Cubey - Your AI Ad Companion',
-  description: 'Ads powered by Cubey on Base.',
+  title: 'StarScout - Your AI Ad Companion',
+  description: 'Ads powered by StarScout on Base.',
   metadataBase: miniappMeta.metadataBase,
   openGraph: miniappMeta.openGraph,
   other: miniappMeta.other as Record<string, string>,
