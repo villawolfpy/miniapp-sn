@@ -27,6 +27,7 @@ export function HomeClient() {
   const [subsError, setSubsError] = useState<string | null>(null);
 
   const [selected, setSelected] = useState(initialSub);
+  const [isOpen, setIsOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
@@ -88,9 +89,9 @@ export function HomeClient() {
     }
   }, [initialSub, fetchPosts]);
 
-  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = e.target.value;
+  function handleSelect(value: string) {
     setSelected(value);
+    setIsOpen(false);
     fetchPosts(value);
   }
 
@@ -104,9 +105,7 @@ export function HomeClient() {
 
       {/* Territory selector */}
       <div className="selector-wrap">
-        <label htmlFor="territory-select" className="selector-label">
-          Territory
-        </label>
+        <span className="selector-label">Territory</span>
         {subsLoading ? (
           <div className="skeleton skeleton-select" />
         ) : subsError ? (
@@ -114,19 +113,30 @@ export function HomeClient() {
             <p>Failed to load territories: {subsError}</p>
           </div>
         ) : (
-          <select
-            id="territory-select"
-            className="selector"
-            value={selected}
-            onChange={handleChange}
-          >
-            <option value="">Select a territory</option>
-            {subs.map((sub) => (
-              <option key={sub.name} value={sub.name}>
-                ~{sub.name}
-              </option>
-            ))}
-          </select>
+          <div className="dropdown">
+            <button
+              className="dropdown-trigger"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <span>{selected ? `~${selected}` : 'Select a territory'}</span>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={{ transform: isOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }}>
+                <path d="M1 1.5l5 5 5-5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {isOpen && (
+              <ul className="dropdown-list">
+                {subs.map((sub) => (
+                  <li
+                    key={sub.name}
+                    className={`dropdown-item${selected === sub.name ? ' dropdown-item--active' : ''}`}
+                    onClick={() => handleSelect(sub.name)}
+                  >
+                    ~{sub.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </div>
 
