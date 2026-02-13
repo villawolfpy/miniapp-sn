@@ -11,7 +11,7 @@ export const minikitConfig = {
 },
   miniapp: {
     version: '1' as const,
-    name: 'StarScout',
+    name: 'StackerScout',
     subtitle: 'Your AI Ad Companion',
     description: 'Ads',
     screenshotUrls: [`${ROOT_URL}/screenshot-portrait.png`],
