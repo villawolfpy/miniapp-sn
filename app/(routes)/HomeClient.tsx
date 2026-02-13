@@ -98,7 +98,7 @@ export function HomeClient() {
   return (
     <main>
       <section className="header">
-        <h1>StarScout</h1>
+        <h1>StackerScout</h1>
         <span className="badge">Territories</span>
         <p>Explore Stacker News territories &amp; posts.</p>
       </section>
