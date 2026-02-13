@@ -40,6 +40,7 @@ export function buildMiniappEmbed(path = '/'): MiniappEmbed {
 export function buildMiniappMetadata(path = '/'): Metadata {
   const embed = buildMiniappEmbed(path);
   const url = new URL(path, cfg.homeUrl).toString();
+  const embedJson = JSON.stringify(embed);
 
   return {
     metadataBase: new URL(cfg.homeUrl),
@@ -51,7 +52,8 @@ export function buildMiniappMetadata(path = '/'): Metadata {
       type: 'website',
     },
     other: {
-      'fc:miniapp': JSON.stringify(embed),
+      // Farcaster spec uses "fc:frame" for embed metadata
+      'fc:frame': embedJson,
     },
   };
 }
@@ -64,9 +66,10 @@ export function buildManifest() {
     accountAssociation.payload &&
     accountAssociation.signature;
 
+  // Farcaster spec requires the key "frame", not "miniapp"
   return {
     ...(hasAssociation ? { accountAssociation } : {}),
-    miniapp: {
+    frame: {
       version: cfg.version,
       name: cfg.name,
       subtitle: cfg.subtitle,

@@ -1,13 +1,2 @@
-declare global {
-  interface Window {
-    farcaster?: {
-      sdk?: {
-        actions?: {
-          ready?: () => void;
-        };
-      };
-    };
-  }
-}
-
+// Type declarations are provided by @farcaster/miniapp-sdk
 export {};

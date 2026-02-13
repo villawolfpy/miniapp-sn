@@ -1,17 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 export function MiniAppReady() {
   useEffect(() => {
-    try {
-      const readyFn = window.farcaster?.sdk?.actions?.ready;
-      if (typeof readyFn === 'function') {
-        readyFn();
-      }
-    } catch {
-      // no-op: SDK not available outside Farcaster client
-    }
+    sdk.actions.ready();
   }, []);
 
   return null;
